@@ -1,21 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ECommerce.Core.Domain.Entities
+namespace ECommerce.Domain.Entities
 {
-    public class ProductImage
+    public class ProductVariantImage
     {
         public int Id { get; set; }
+        public int ProductVariantId { get; set; }
+        public ProductVariant ProductVariant { get; set; }
 
-        public int ProductId { get; set; }
-        public Product Product { get; set; }
         public string ImageUrl { get; set; }
 
         public bool IsPrimary { get; set; } = false;
-        public int SortOrder { get; set; } = 0;
     }
 }

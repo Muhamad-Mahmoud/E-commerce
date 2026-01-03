@@ -1,11 +1,11 @@
-﻿using ECommerce.Core.Domain.Enums;
+﻿using ECommerce.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ECommerce.Core.Domain.Entities
+namespace ECommerce.Domain.Entities
 {
     public class Order
     {

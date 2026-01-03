@@ -1,5 +1,6 @@
-﻿using ECommerce.Core.Domain.Entities;
-using ECommerce.Core.Domain.Enums;
+﻿
+using ECommerce.Domain.Entities;
+using ECommerce.Domain.Enums;
 
 public class Product
 {
