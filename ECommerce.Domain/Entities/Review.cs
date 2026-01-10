@@ -15,7 +15,6 @@ namespace ECommerce.Domain.Entities
         public Product Product { get; set; }
 
         public string UserId { get; set; }
-        public ApplicationUser User { get; set; }
 
         public int Rating { get; set; }
 

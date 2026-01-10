@@ -1,4 +1,4 @@
-using ECommerce.Infrastructure.Data;
+using ECommerce.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
