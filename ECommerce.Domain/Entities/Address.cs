@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ECommerce.Domain.Entities
+﻿namespace ECommerce.Domain.Entities
 {
     public class Address
     {
@@ -16,7 +10,6 @@ namespace ECommerce.Domain.Entities
         public string City { get; set; }
         public string? Street { get; set; }
         public string? PostalCode { get; set; }
-
         public bool IsDefaultShipping { get; set; }
     }
 }
