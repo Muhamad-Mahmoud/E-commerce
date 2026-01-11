@@ -57,3 +57,7 @@ Desktop.ini
 # =============================
 appsettings.Development.json
 appsettings.Local.json
+
+# Temporary/Future files
+**/Services/Interfaces/_Future/
+**/_Future/
