@@ -6,10 +6,9 @@ namespace ECommerce.Domain.Interfaces.Repositories
     /// <summary>
     /// Repository for Order operations.
     /// </summary>
-    public interface IOrderRepository
+    public interface IOrderRepository : IRepository<Order>
     {
-        // Query by business needs
-        Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        // Order-specific query methods
         Task<Order?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default);
         Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken cancellationToken = default);
         
@@ -17,12 +16,7 @@ namespace ECommerce.Domain.Interfaces.Repositories
         Task<IEnumerable<Order>> GetOrdersByStatusAsync(OrderStatus status, CancellationToken cancellationToken = default);
         Task<IEnumerable<Order>> GetRecentOrdersAsync(int count, CancellationToken cancellationToken = default);
         
-        // Commands
-        Task AddAsync(Order order, CancellationToken cancellationToken = default);
-        Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default);
+        // Order-specific command
         Task<bool> OrderNumberExistsAsync(string orderNumber, CancellationToken cancellationToken = default);
-        
-        // Persistence
-        Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

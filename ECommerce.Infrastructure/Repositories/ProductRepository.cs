@@ -9,16 +9,13 @@ namespace ECommerce.Infrastructure.Repositories
     /// <summary>
     /// Product repository implementation.
     /// </summary>
-    public class ProductRepository : IProductRepository
+    public class ProductRepository : Repository<Product>, IProductRepository
     {
-        private readonly AppDbContext _context;
-
-        public ProductRepository(AppDbContext context)
+        public ProductRepository(AppDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        public async Task<Product?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        public override async Task<Product?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             return await _context.Products
                 .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
@@ -69,21 +66,6 @@ namespace ECommerce.Infrastructure.Repositories
                 .Include(p => p.Variants)
                 .ToListAsync(cancellationToken);
         }
-
-        public async Task AddAsync(Product product, CancellationToken cancellationToken = default)
-        {
-            await _context.Products.AddAsync(product, cancellationToken);
-        }
-
-        public async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
-        {
-            return await _context.Products
-                .AnyAsync(p => p.Id == id, cancellationToken);
-        }
-
-        public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-        }
     }
 }
+

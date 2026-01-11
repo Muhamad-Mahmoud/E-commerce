@@ -19,7 +19,6 @@
     <Folder Include="Filters\ActionFilters\" />
     <Folder Include="Filters\ExceptionFilters\" />
     <Folder Include="Filters\ResultFilters\" />
-    <Folder Include="Middleware\" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,16 +9,13 @@ namespace ECommerce.Infrastructure.Repositories
     /// <summary>
     /// Order repository implementation.
     /// </summary>
-    public class OrderRepository : IOrderRepository
+    public class OrderRepository : Repository<Order>, IOrderRepository
     {
-        private readonly AppDbContext _context;
-
-        public OrderRepository(AppDbContext context)
+        public OrderRepository(AppDbContext context) : base(context)
         {
-            _context = context;
         }
 
-        public async Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        public override async Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             return await _context.Orders
                 .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
@@ -62,26 +59,11 @@ namespace ECommerce.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task AddAsync(Order order, CancellationToken cancellationToken = default)
-        {
-            await _context.Orders.AddAsync(order, cancellationToken);
-        }
-
-        public async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
-        {
-            return await _context.Orders
-                .AnyAsync(o => o.Id == id, cancellationToken);
-        }
-
         public async Task<bool> OrderNumberExistsAsync(string orderNumber, CancellationToken cancellationToken = default)
         {
             return await _context.Orders
                 .AnyAsync(o => o.OrderNumber == orderNumber, cancellationToken);
         }
-
-        public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-        }
     }
 }
+
