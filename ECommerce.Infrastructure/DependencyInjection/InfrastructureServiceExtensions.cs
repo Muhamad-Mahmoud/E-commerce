@@ -1,5 +1,8 @@
+using ECommerce.Application.Interfaces.Services.Auth;
+using ECommerce.Application.Interfaces.Services.Categories;
+using ECommerce.Application.Interfaces.Services.Products;
 using ECommerce.Application.Interfaces.Repositories;
-using ECommerce.Application.Services.Interfaces;
+using ECommerce.Application.Services;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Interfaces.Repositories;
 using ECommerce.Infrastructure.Helper;
@@ -77,6 +80,8 @@ namespace ECommerce.Infrastructure.DependencyInjection
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IRefreshTokenService, RefreshTokenService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<IProductService, ProductService>();
 
             // 6. Configure Identity Options
             services.ConfigureIdentity();

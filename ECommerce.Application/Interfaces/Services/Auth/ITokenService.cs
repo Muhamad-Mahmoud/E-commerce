@@ -1,6 +1,6 @@
 using ECommerce.Domain.Entities;
 
-namespace ECommerce.Application.Services.Interfaces
+namespace ECommerce.Application.Interfaces.Services.Auth
 {
     public interface ITokenService
     {

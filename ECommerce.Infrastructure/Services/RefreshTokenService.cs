@@ -1,5 +1,5 @@
+using ECommerce.Application.Interfaces.Services.Auth;
 using ECommerce.Application.Interfaces.Repositories;
-using ECommerce.Application.Services.Interfaces;
 using ECommerce.Domain.Entities;
 using ECommerce.Infrastructure.Helper;
 using Microsoft.Extensions.Options;

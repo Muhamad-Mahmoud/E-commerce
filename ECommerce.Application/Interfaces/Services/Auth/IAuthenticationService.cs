@@ -1,6 +1,6 @@
 using ECommerce.Application.DTO;
 
-namespace ECommerce.Application.Services.Interfaces
+namespace ECommerce.Application.Interfaces.Services.Auth
 {
     public interface IAuthenticationService
     {

@@ -1,26 +1,16 @@
 using ECommerce.Domain.Entities;
+using ECommerce.Domain.Interfaces.Repositories;
 
-namespace ECommerce.Domain.Interfaces.Repositories
+namespace ECommerce.Application.Interfaces.Repositories
 {
-    /// <summary>
-    /// Repository for Category operations.
-    /// </summary>
-    public interface ICategoryRepository
+    public interface ICategoryRepository : IRepository<Category>
     {
-        // Query by business needs
-        Task<Category?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        // Custom Queries
         Task<Category?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
         
         Task<IEnumerable<Category>> GetRootCategoriesAsync(CancellationToken cancellationToken = default);
         Task<IEnumerable<Category>> GetSubCategoriesAsync(int parentId, CancellationToken cancellationToken = default);
-        Task<IEnumerable<Category>> GetAllAsync(CancellationToken cancellationToken = default);
         
-        // Commands
-        Task AddAsync(Category category, CancellationToken cancellationToken = default);
-        Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default);
         Task<bool> NameExistsAsync(string name, CancellationToken cancellationToken = default);
-        
-        // Persistence
-        Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

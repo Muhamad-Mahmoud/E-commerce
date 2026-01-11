@@ -1,0 +1,66 @@
+using ECommerce.Application.DTO;
+using ECommerce.Application.Interfaces.Services.Products;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace ECommerce.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ProductsController : ControllerBase
+    {
+        private readonly IProductService _productService;
+
+        public ProductsController(IProductService productService)
+        {
+            _productService = productService;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetProducts([FromQuery] ProductParams productParams)
+        {
+            var result = await _productService.GetProductsAsync(productParams);
+            return Ok(result);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProduct(int id)
+        {
+            var product = await _productService.GetProductByIdAsync(id);
+            if (product == null) return NotFound();
+            return Ok(product);
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            
+            var result = await _productService.CreateProductAsync(request);
+            return CreatedAtAction(nameof(GetProduct), new { id = result.Id }, result);
+        }
+
+        [Authorize]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductRequest request)
+        {
+            if (id != request.Id) return BadRequest("ID mismatch");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var success = await _productService.UpdateProductAsync(id, request);
+            if (!success) return NotFound();
+            
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            var success = await _productService.DeleteProductAsync(id);
+            if (!success) return NotFound();
+            return NoContent();
+        }
+    }
+}

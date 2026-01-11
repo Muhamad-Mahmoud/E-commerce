@@ -1,4 +1,4 @@
-using ECommerce.Application.Services.Interfaces;
+using ECommerce.Application.Interfaces.Services.Auth;
 using ECommerce.Infrastructure.Helper;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
