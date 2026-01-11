@@ -9,7 +9,6 @@ namespace ECommerce.Application.Services.Interfaces
         Task LogoutAsync(string userId);
         Task<bool> ChangePasswordAsync(ChangePasswordRequest request);
         Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
-        Task<bool> RevokeTokenAsync(string token);
         Task<AuthenticationResult> RefreshTokenAsync(string token);
     }
 }

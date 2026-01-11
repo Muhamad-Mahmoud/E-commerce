@@ -63,30 +63,6 @@ namespace ECommerce.API.Controllers
             return Ok(result);
         }
 
-        [Authorize]
-        [HttpPost("revoke-token")]
-        public async Task<IActionResult> RevokeToken([FromBody] RefreshTokenRequest request)
-        {
-            if (string.IsNullOrEmpty(request.Token))
-                return BadRequest(new AuthenticationResult
-                {
-                    Success = false,
-                    Errors = new List<string> { "Refresh token is required" }
-                });
-
-            var result = await _authenticationService.RevokeTokenAsync(request.Token);
-
-            if (!result)
-            {
-                return BadRequest(new AuthenticationResult
-                {
-                    Success = false,
-                    Errors = new List<string> { "Token is invalid or already revoked" }
-                });
-            }
-
-            return Ok(new { message = "Token revoked successfully" });
-        }
 
         [Authorize]
         [HttpPost("logout")]

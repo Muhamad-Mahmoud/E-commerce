@@ -119,10 +119,6 @@ namespace ECommerce.Infrastructure.Services
             return result.Succeeded;
         }
 
-        public async Task<bool> RevokeTokenAsync(string token)
-        {
-            return await _refreshTokenService.RevokeRefreshTokenAsync(token);
-        }
 
         public async Task<AuthenticationResult> RefreshTokenAsync(string token)
         {
