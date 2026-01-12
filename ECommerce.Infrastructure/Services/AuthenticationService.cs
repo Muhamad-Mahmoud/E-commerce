@@ -48,8 +48,12 @@ namespace ECommerce.Infrastructure.Services
                 };
             }
 
+            // Assign Default Role
+            await _userManager.AddToRoleAsync(user, "User");
+
             // Generate Tokens
-            var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email!);
+            var roles = await _userManager.GetRolesAsync(user);
+            var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email!, roles);
             var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id);
 
             return new AuthenticationResult
@@ -57,7 +61,7 @@ namespace ECommerce.Infrastructure.Services
                 Success = true,
                 Token = accessToken,
                 RefreshToken = refreshToken.Token,
-                User = new UserDto { Identifier = user.Id, Email = user.Email!, FullName = user.FullName }
+                User = new UserDto { Identifier = user.Id, Email = user.Email!, FullName = user.FullName, Roles = roles }
             };
         }
 
@@ -85,7 +89,8 @@ namespace ECommerce.Infrastructure.Services
             }
 
             // Generate Tokens
-            var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email!);
+            var roles = await _userManager.GetRolesAsync(user);
+            var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email!, roles);
             var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id);
 
             return new AuthenticationResult
@@ -93,7 +98,7 @@ namespace ECommerce.Infrastructure.Services
                 Success = true,
                 Token = accessToken,
                 RefreshToken = refreshToken.Token,
-                User = new UserDto { Identifier = user.Id, Email = user.Email!, FullName = user.FullName }
+                User = new UserDto { Identifier = user.Id, Email = user.Email!, FullName = user.FullName, Roles = roles }
             };
         }
 
@@ -148,7 +153,8 @@ namespace ECommerce.Infrastructure.Services
             await _refreshTokenService.RevokeRefreshTokenAsync(token);
 
             // Generate new tokens
-            var newAccessToken = _tokenService.GenerateAccessToken(user.Id, user.Email!);
+            var roles = await _userManager.GetRolesAsync(user);
+            var newAccessToken = _tokenService.GenerateAccessToken(user.Id, user.Email!, roles);
             var newRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id);
 
             return new AuthenticationResult
@@ -156,7 +162,7 @@ namespace ECommerce.Infrastructure.Services
                 Success = true,
                 Token = newAccessToken,
                 RefreshToken = newRefreshToken.Token,
-                User = new UserDto { Identifier = user.Id, Email = user.Email!, FullName = user.FullName }
+                User = new UserDto { Identifier = user.Id, Email = user.Email!, FullName = user.FullName, Roles = roles }
             };
         }
 

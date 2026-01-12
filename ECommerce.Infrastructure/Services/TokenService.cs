@@ -17,7 +17,7 @@ namespace ECommerce.Infrastructure.Services
             _jwtSettings = jwtSettings.Value;
         }
 
-        public string GenerateAccessToken(string userId, string email)
+        public string GenerateAccessToken(string userId, string email, IList<string> roles)
         {
             var claims = new List<Claim>
             {
@@ -25,6 +25,11 @@ namespace ECommerce.Infrastructure.Services
                 new Claim(ClaimTypes.Email, email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

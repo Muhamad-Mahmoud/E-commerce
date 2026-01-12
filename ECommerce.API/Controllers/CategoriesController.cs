@@ -41,7 +41,7 @@ namespace ECommerce.API.Controllers
             return Ok(category);
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request)
         {
@@ -49,7 +49,7 @@ namespace ECommerce.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryRequest request)
         {
@@ -61,7 +61,7 @@ namespace ECommerce.API.Controllers
             return NoContent();
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

@@ -34,7 +34,7 @@ namespace ECommerce.API.Controllers
             return Ok(product);
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
         {
@@ -44,7 +44,7 @@ namespace ECommerce.API.Controllers
             return CreatedAtAction(nameof(GetProduct), new { id = result.Id }, result);
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductRequest request)
         {
@@ -57,7 +57,7 @@ namespace ECommerce.API.Controllers
             return NoContent();
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
