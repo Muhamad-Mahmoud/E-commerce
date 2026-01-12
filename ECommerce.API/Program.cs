@@ -40,6 +40,9 @@ try
 
     app.UseHttpsRedirection();
 
+    // Use global exception handling middleware
+    app.UseMiddleware<ExceptionMiddleware>();
+
     // Use custom request logging middleware
     app.UseMiddleware<RequestLoggingMiddleware>();
 
