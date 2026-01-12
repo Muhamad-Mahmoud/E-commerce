@@ -1,4 +1,5 @@
-using ECommerce.Application.DTO;
+using ECommerce.Application.DTO.Auth;
+using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Services.Auth;
 using ECommerce.Domain.Entities;
 using ECommerce.Infrastructure.Identity;
@@ -161,3 +162,4 @@ namespace ECommerce.Infrastructure.Services
 
     }
 }
+

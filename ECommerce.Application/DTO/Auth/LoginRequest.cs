@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-namespace ECommerce.Application.DTO
+namespace ECommerce.Application.DTO.Auth
 {
     /// <summary>
     /// Login request DTO.

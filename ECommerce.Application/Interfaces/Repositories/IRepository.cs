@@ -9,9 +9,10 @@ namespace ECommerce.Domain.Interfaces.Repositories
     public interface IRepository<T> where T : class
     {
         // Query operations
-        Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
-        Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default);
-        Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default);
+        Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default, params Expression<Func<T, object>>[] includes);
+        Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default, params Expression<Func<T, object>>[] includes);
+        Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default, params Expression<Func<T, object>>[] includes);
+        Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default, params Expression<Func<T, object>>[] includes);
         
         // Command operations
         Task AddAsync(T entity, CancellationToken cancellationToken = default);
@@ -25,8 +26,5 @@ namespace ECommerce.Domain.Interfaces.Repositories
         Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default);
         Task<int> CountAsync(CancellationToken cancellationToken = default);
         Task<int> CountAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default);
-        
-        // Persistence
-        Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -1,16 +1,12 @@
-using System.ComponentModel.DataAnnotations;
-
-namespace ECommerce.Application.DTO
+namespace ECommerce.Application.DTO.Categories
 {
-    public class UpdateCategoryRequest
+    public class CategoryDto
     {
-        [Required]
         public int Id { get; set; }
-        
-        [Required]
-        [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
         public string? ImageUrl { get; set; }
         public int? ParentCategoryId { get; set; }
+        public string? ParentCategoryName { get; set; }
+        public List<CategoryDto> SubCategories { get; set; } = new();
     }
 }

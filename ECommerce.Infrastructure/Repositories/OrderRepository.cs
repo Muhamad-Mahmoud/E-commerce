@@ -15,24 +15,18 @@ namespace ECommerce.Infrastructure.Repositories
         {
         }
 
-        public override async Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-        {
-            return await _context.Orders
-                .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
-        }
-
         public async Task<Order?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default)
         {
+            // Note: Complex filtering in Include requires direct DbContext access
             return await _context.Orders
-                .Include(o => _context.OrderItems.Where(oi => oi.OrderId == id))
-                .Include(o => _context.PaymentTransactions.Where(pt => pt.OrderId == id))
+                .Include(o => o.OrderItems)
+                .Include(o => o.PaymentTransactions)
                 .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
         }
 
         public async Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken cancellationToken = default)
         {
-            return await _context.Orders
-                .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, cancellationToken);
+            return await FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, cancellationToken);
         }
 
         public async Task<IEnumerable<Order>> GetUserOrdersAsync(string userId, CancellationToken cancellationToken = default)
@@ -61,9 +55,8 @@ namespace ECommerce.Infrastructure.Repositories
 
         public async Task<bool> OrderNumberExistsAsync(string orderNumber, CancellationToken cancellationToken = default)
         {
-            return await _context.Orders
-                .AnyAsync(o => o.OrderNumber == orderNumber, cancellationToken);
+            var order = await FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, cancellationToken);
+            return order != null;
         }
     }
 }
-

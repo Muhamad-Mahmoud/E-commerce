@@ -1,4 +1,5 @@
-using ECommerce.Application.DTO;
+using ECommerce.Application.DTO.Products;
+using ECommerce.Application.DTO.Pagination;
 
 namespace ECommerce.Application.Interfaces.Services.Products
 {

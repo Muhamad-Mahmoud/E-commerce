@@ -1,4 +1,7 @@
-using ECommerce.Application.DTO;
+using ECommerce.Application.DTO.Auth;
+using ECommerce.Application.DTO.Categories;
+using ECommerce.Application.DTO.Products;
+using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Services.Categories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +20,21 @@ namespace ECommerce.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetCategories([FromQuery] CategoryParams categoryParams)
+        {
+            // If parameters indicate need for filtering/pagination, use Search
+            // Otherwise, we could still use GetAllAsync or just default to Search with defaults
+            
+            // Note: Since CategoryParams has defaults (Page 1, Size 10), it will always look like pagination is requested.
+            // If you want "Get All Without Pagination", user might need a different endpoint or a specific flag.
+            // For now, let's behave like ProductsController and return PagedResult.
+            
+            var result = await _categoryService.GetCategoriesAsync(categoryParams);
+            return Ok(result);
+        }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllWithoutPagination()
         {
             var categories = await _categoryService.GetAllAsync();
             return Ok(categories);

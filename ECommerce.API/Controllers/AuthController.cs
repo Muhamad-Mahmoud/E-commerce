@@ -1,4 +1,7 @@
-using ECommerce.Application.DTO;
+using ECommerce.Application.DTO.Auth;
+using ECommerce.Application.DTO.Categories;
+using ECommerce.Application.DTO.Products;
+using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Services.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -76,3 +79,4 @@ namespace ECommerce.API.Controllers
         }
     }
 }
+

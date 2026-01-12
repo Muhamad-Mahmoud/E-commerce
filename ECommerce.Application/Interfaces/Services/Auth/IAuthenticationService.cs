@@ -1,4 +1,5 @@
 using ECommerce.Application.DTO;
+using ECommerce.Application.DTO.Auth;
 
 namespace ECommerce.Application.Interfaces.Services.Auth
 {
@@ -12,3 +13,4 @@ namespace ECommerce.Application.Interfaces.Services.Auth
         Task<AuthenticationResult> RefreshTokenAsync(string token);
     }
 }
+

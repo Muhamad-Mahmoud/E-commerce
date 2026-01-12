@@ -1,6 +1,9 @@
 using AutoMapper;
-using ECommerce.Application.DTO;
-using ECommerce.Application.Interfaces.Repositories;
+using ECommerce.Application.DTO.Auth;
+using ECommerce.Application.DTO.Categories;
+using ECommerce.Application.DTO.Products;
+using ECommerce.Application.DTO.Pagination;
+using ECommerce.Domain.Interfaces;
 using ECommerce.Domain.Entities;
 using ECommerce.Application.Interfaces.Services.Categories;
 
@@ -8,24 +11,38 @@ namespace ECommerce.Application.Services
 {
     public class CategoryService : ICategoryService
     {
-        private readonly ICategoryRepository _categoryRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public CategoryService(ICategoryRepository categoryRepository, IMapper mapper)
+        public CategoryService(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _categoryRepository = categoryRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
         public async Task<IEnumerable<CategoryDto>> GetAllAsync()
         {
-            var categories = await _categoryRepository.GetAllAsync();
+            var categories = await _unitOfWork.Categories.GetAllAsync(
+                default,
+                c => c.ParentCategory
+            );
+            
             return _mapper.Map<IEnumerable<CategoryDto>>(categories);
+        }
+
+        public async Task<PagedResult<CategoryDto>> GetCategoriesAsync(CategoryParams categoryParams)
+        {
+            return await _unitOfWork.Categories.SearchCategoriesAsync(categoryParams);
         }
 
         public async Task<CategoryDto?> GetByIdAsync(int id)
         {
-            var category = await _categoryRepository.GetByIdAsync(id);
+            var category = await _unitOfWork.Categories.GetByIdAsync(
+                id, 
+                default,
+                c => c.ParentCategory
+            );
+            
             if (category == null) return null;
             return _mapper.Map<CategoryDto>(category);
         }
@@ -34,33 +51,45 @@ namespace ECommerce.Application.Services
         {
             var category = _mapper.Map<Category>(request);
 
-            await _categoryRepository.AddAsync(category);
-            await _categoryRepository.SaveChangesAsync();
+            await _unitOfWork.Categories.AddAsync(category);
+            await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<CategoryDto>(category);
+            //  Reload with ParentCategory after save
+            var savedCategory = await _unitOfWork.Categories.GetByIdAsync(
+                category.Id,
+                default,
+                c => c.ParentCategory
+            );
+
+            return _mapper.Map<CategoryDto>(savedCategory ?? category);
         }
 
         public async Task<bool> UpdateAsync(UpdateCategoryRequest request)
         {
-            var category = await _categoryRepository.GetByIdAsync(request.Id);
+            var category = await _unitOfWork.Categories.GetByIdAsync(
+                request.Id,
+                default,
+                c => c.ParentCategory
+            );
+            
             if (category == null) return false;
 
             // Use Mapper to update existing entity
             _mapper.Map(request, category);
 
-            _categoryRepository.Update(category);
-            await _categoryRepository.SaveChangesAsync();
+            _unitOfWork.Categories.Update(category);
+            await _unitOfWork.SaveChangesAsync();
 
             return true;
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var category = await _categoryRepository.GetByIdAsync(id);
+            var category = await _unitOfWork.Categories.GetByIdAsync(id);
             if (category == null) return false;
 
-            _categoryRepository.Delete(category);
-            await _categoryRepository.SaveChangesAsync();
+            _unitOfWork.Categories.Delete(category);
+            await _unitOfWork.SaveChangesAsync();
 
             return true;
         }

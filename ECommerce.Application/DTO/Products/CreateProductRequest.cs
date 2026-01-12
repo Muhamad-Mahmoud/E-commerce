@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using ECommerce.Domain.Enums;
 
-namespace ECommerce.Application.DTO
+namespace ECommerce.Application.DTO.Products
 {
     public class CreateProductRequest
     {

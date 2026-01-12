@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTO
+namespace ECommerce.Application.DTO.Pagination
 {
     public class PagedResult<T>
     {

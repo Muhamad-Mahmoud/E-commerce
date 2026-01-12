@@ -1,5 +1,6 @@
 using AutoMapper;
-using ECommerce.Application.DTO;
+using ECommerce.Application.DTO.Categories;
+using ECommerce.Application.DTO.Products;
 using ECommerce.Domain.Entities;
 
 namespace ECommerce.Application.Mapping

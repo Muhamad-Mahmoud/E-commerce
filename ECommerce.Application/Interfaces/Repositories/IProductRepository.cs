@@ -1,4 +1,5 @@
-using ECommerce.Application.DTO;
+using ECommerce.Application.DTO.Products;
+using ECommerce.Application.DTO.Pagination;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Interfaces.Repositories;
 
@@ -13,7 +14,7 @@ namespace ECommerce.Application.Interfaces.Repositories
         Task<Product?> GetWithVariantsAsync(int id, CancellationToken cancellationToken = default);
         Task<Product?> GetWithFullDetailsAsync(int id, CancellationToken cancellationToken = default);
         
-        Task<PagedResult<Product>> SearchProductsAsync(ProductParams productParams, CancellationToken cancellationToken = default);
+        Task<PagedResult<ProductDto>> SearchProductsAsync(ProductParams productParams, CancellationToken cancellationToken = default);
         
         Task<IEnumerable<Product>> GetPublishedProductsAsync(CancellationToken cancellationToken = default);
         Task<IEnumerable<Product>> GetByCategoryIdAsync(int categoryId, CancellationToken cancellationToken = default);

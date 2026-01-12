@@ -76,6 +76,9 @@ namespace ECommerce.Infrastructure.DependencyInjection
             services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
+            // 4.1 Register Unit of Work
+            services.AddScoped<ECommerce.Domain.Interfaces.IUnitOfWork, ECommerce.Infrastructure.UnitOfWork.UnitOfWork>();
+
             // 5. Register Authentication Services
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IRefreshTokenService, RefreshTokenService>();

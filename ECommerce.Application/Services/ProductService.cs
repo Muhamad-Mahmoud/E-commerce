@@ -1,42 +1,33 @@
 using AutoMapper;
-using ECommerce.Application.DTO;
+using ECommerce.Application.DTO.Auth;
+using ECommerce.Application.DTO.Categories;
+using ECommerce.Application.DTO.Products;
+using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Services.Products;
-using ECommerce.Application.Interfaces.Repositories;
+using ECommerce.Domain.Interfaces;
 using ECommerce.Domain.Entities;
 
 namespace ECommerce.Application.Services
 {
     public class ProductService : IProductService
     {
-        private readonly IProductRepository _productRepository;
-        private readonly ICategoryRepository _categoryRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public ProductService(IProductRepository productRepository, ICategoryRepository categoryRepository, IMapper mapper)
+        public ProductService(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _productRepository = productRepository;
-            _categoryRepository = categoryRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
         public async Task<PagedResult<ProductDto>> GetProductsAsync(ProductParams productParams)
         {
-            var pagedProducts = await _productRepository.SearchProductsAsync(productParams);
-            
-            var dtos = _mapper.Map<IEnumerable<ProductDto>>(pagedProducts.Items);
-
-            return new PagedResult<ProductDto>
-            {
-                Items = dtos,
-                TotalCount = pagedProducts.TotalCount,
-                PageNumber = pagedProducts.PageNumber,
-                PageSize = pagedProducts.PageSize
-            };
+            return await _unitOfWork.Products.SearchProductsAsync(productParams);
         }
 
         public async Task<ProductDetailsDto?> GetProductByIdAsync(int id)
         {
-            var product = await _productRepository.GetWithFullDetailsAsync(id);
+            var product = await _unitOfWork.Products.GetWithFullDetailsAsync(id);
             if (product == null) return null;
             return _mapper.Map<ProductDetailsDto>(product);
         }
@@ -45,45 +36,55 @@ namespace ECommerce.Application.Services
         {
             if (id != request.Id) return false;
 
-            var product = await _productRepository.GetByIdAsync(id);
+            var product = await _unitOfWork.Products.GetByIdAsync(
+                id, 
+                default,
+                p => p.Category
+            );
+            
             if (product == null) return false;
 
             // Validate Category
-            if (!await _categoryRepository.ExistsAsync(request.CategoryId))
-                throw new ArgumentException("Invalid Category ID"); // Or return false/custom result
+            if (!await _unitOfWork.Categories.ExistsAsync(request.CategoryId))
+                throw new ArgumentException("Invalid Category ID");
 
-            // Update basic fields
             _mapper.Map(request, product);
             
-            _productRepository.Update(product);
-            await _productRepository.SaveChangesAsync();
+            _unitOfWork.Products.Update(product);
+            await _unitOfWork.SaveChangesAsync();
             return true;
         }
 
         public async Task<ProductDto> CreateProductAsync(CreateProductRequest request)
         {
             // Validate Category
-            if (!await _categoryRepository.ExistsAsync(request.CategoryId))
+            if (!await _unitOfWork.Categories.ExistsAsync(request.CategoryId))
                 throw new ArgumentException("Invalid Category ID");
 
             var product = _mapper.Map<Product>(request);
             
-            await _productRepository.AddAsync(product);
-            await _productRepository.SaveChangesAsync();
+            await _unitOfWork.Products.AddAsync(product);
+            await _unitOfWork.SaveChangesAsync();
 
-            // Re-fetch to include any db-generated fields or related data if necessary for DTO
-            var createdProduct = await _productRepository.GetWithVariantsAsync(product.Id);
+            var createdProduct = await _unitOfWork.Products.GetByIdAsync(
+                product.Id,
+                default,
+                p => p.Category,
+                p => p.Variants
+            );
+            
             return _mapper.Map<ProductDto>(createdProduct ?? product);
         }
 
         public async Task<bool> DeleteProductAsync(int id)
         {
-            var product = await _productRepository.GetByIdAsync(id);
+            var product = await _unitOfWork.Products.GetByIdAsync(id);
             if (product == null) return false;
 
-            _productRepository.Delete(product);
-            await _productRepository.SaveChangesAsync();
+            _unitOfWork.Products.Delete(product);
+            await _unitOfWork.SaveChangesAsync();
             return true;
         }
     }
 }
+

@@ -1,8 +1,8 @@
-using ECommerce.Application.DTO;
+using ECommerce.Application.DTO.Products;
+using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Repositories;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Enums;
-// using ECommerce.Domain.Interfaces.Repositories; // REMOVED (moved to Application)
 using ECommerce.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,51 +17,37 @@ namespace ECommerce.Infrastructure.Repositories
         {
         }
 
-        public override async Task<Product?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-        {
-            return await _context.Products
-                .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
-        }
-
         public async Task<Product?> GetWithVariantsAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await _context.Products
-                .Include(p => p.Variants)
-                .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+            return await GetByIdAsync(id, cancellationToken, p => p.Variants);
         }
 
         public async Task<Product?> GetWithFullDetailsAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await _context.Products
-                .Include(p => p.Variants)
-                .Include(p => p.Images)
-                .Include(p => p.Reviews)
-                .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+            return await GetByIdAsync(id, cancellationToken, 
+                p => p.Category,
+                p => p.Variants, 
+                p => p.Images, 
+                p => p.Reviews);
         }
 
         public async Task<IEnumerable<Product>> GetPublishedProductsAsync(CancellationToken cancellationToken = default)
         {
-            return await _context.Products
-                .Where(p => p.Status == ProductStatus.Published)
-                .Include(p => p.Variants)
-                .ToListAsync(cancellationToken);
+            return await FindAsync(p => p.Status == ProductStatus.Published, cancellationToken, p => p.Variants);
         }
 
         public async Task<IEnumerable<Product>> GetByCategoryIdAsync(int categoryId, CancellationToken cancellationToken = default)
         {
-            return await _context.Products
-                .Where(p => p.CategoryId == categoryId)
-                .Include(p => p.Variants)
-                .ToListAsync(cancellationToken);
+            return await FindAsync(p => p.CategoryId == categoryId, cancellationToken, p => p.Variants);
         }
 
-        public async Task<PagedResult<Product>> SearchProductsAsync(ProductParams p, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<ProductDto>> SearchProductsAsync(ProductParams p, CancellationToken cancellationToken = default)
         {
             var query = _context.Products
-                .Include(x => x.Variants)
+                .AsNoTracking()
                 .AsQueryable();
 
-            // 1. Filtering
+            // Filtering
             if (!string.IsNullOrEmpty(p.Search))
             {
                 var lowerTerm = p.Search.ToLower();
@@ -74,33 +60,49 @@ namespace ECommerce.Infrastructure.Repositories
                 query = query.Where(x => x.CategoryId == p.CategoryId);
             }
 
+            // Price filtering using Min Variant Price
             if (p.MinPrice.HasValue)
             {
-                query = query.Where(x => x.Variants.Any(v => v.Price >= p.MinPrice));
+                query = query.Where(x => x.Variants.Min(v => v.Price) >= p.MinPrice);
             }
 
             if (p.MaxPrice.HasValue)
             {
-                query = query.Where(x => x.Variants.Any(v => v.Price <= p.MaxPrice));
+                query = query.Where(x => x.Variants.Min(v => v.Price) <= p.MaxPrice);
             }
 
-            // 2. Sorting
+            //  Sorting
             query = p.Sort switch
             {
                 "priceAsc" => query.OrderBy(x => x.Variants.Min(v => v.Price)),
                 "priceDesc" => query.OrderByDescending(x => x.Variants.Min(v => v.Price)),
-                "newest" => query.OrderByDescending(x => x.Id), // Or CreatedAt if available
+                "newest" => query.OrderByDescending(x => x.Id),
                 _ => query.OrderBy(x => x.Name)
             };
 
-            // 3. Pagination
+            // Pagination & Count
             var totalCount = await query.CountAsync(cancellationToken);
+
+            //  Projection to DTO
             var items = await query
                 .Skip((p.PageNumber - 1) * p.PageSize)
                 .Take(p.PageSize)
+                .Select(pr => new ProductDto
+                {
+                    Id = pr.Id,
+                    Name = pr.Name,
+                    Description = pr.Description,
+                    CategoryName = pr.Category != null ? pr.Category.Name : null,
+                    // Get minimum price from variants
+                    Price = pr.Variants.Any() ? pr.Variants.Min(v => v.Price) : 0,
+                    // Get Primary Image, or first image, or null
+                    MainImageUrl = pr.Images.Any(i => i.IsPrimary) 
+                        ? pr.Images.FirstOrDefault(i => i.IsPrimary)!.ImageUrl 
+                        : (pr.Images.Any() ? pr.Images.FirstOrDefault()!.ImageUrl : null)
+                })
                 .ToListAsync(cancellationToken);
 
-            return new PagedResult<Product>
+            return new PagedResult<ProductDto>
             {
                 Items = items,
                 TotalCount = totalCount,
@@ -110,4 +112,3 @@ namespace ECommerce.Infrastructure.Repositories
         }
     }
 }
-

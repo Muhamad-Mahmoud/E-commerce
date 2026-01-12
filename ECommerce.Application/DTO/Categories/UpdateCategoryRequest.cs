@@ -1,9 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ECommerce.Application.DTO
+namespace ECommerce.Application.DTO.Categories
 {
-    public class CreateCategoryRequest
+    public class UpdateCategoryRequest
     {
+        [Required]
+        public int Id { get; set; }
+        
         [Required]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;

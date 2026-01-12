@@ -1,5 +1,5 @@
 using ECommerce.Application.Interfaces.Services.Auth;
-using ECommerce.Application.Interfaces.Repositories;
+using ECommerce.Domain.Interfaces;
 using ECommerce.Domain.Entities;
 using ECommerce.Infrastructure.Helper;
 using Microsoft.Extensions.Options;
@@ -9,12 +9,12 @@ namespace ECommerce.Infrastructure.Services
 {
     public class RefreshTokenService : IRefreshTokenService
     {
-        private readonly IRefreshTokenRepository _refreshTokenRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly JWT _jwtSettings;
 
-        public RefreshTokenService(IRefreshTokenRepository refreshTokenRepository, IOptions<JWT> jwtSettings)
+        public RefreshTokenService(IUnitOfWork unitOfWork, IOptions<JWT> jwtSettings)
         {
-            _refreshTokenRepository = refreshTokenRepository;
+            _unitOfWork = unitOfWork;
             _jwtSettings = jwtSettings.Value;
         }
 
@@ -28,33 +28,33 @@ namespace ECommerce.Infrastructure.Services
                 CreatedAt = DateTime.UtcNow
             };
 
-            await _refreshTokenRepository.AddAsync(refreshToken);
-            await _refreshTokenRepository.SaveChangesAsync();
+            await _unitOfWork.RefreshTokens.AddAsync(refreshToken);
+            await _unitOfWork.SaveChangesAsync();
 
             return refreshToken;
         }
 
         public async Task<RefreshToken?> GetByTokenAsync(string token)
         {
-            return await _refreshTokenRepository.GetByTokenAsync(token);
+            return await _unitOfWork.RefreshTokens.GetByTokenAsync(token);
         }
 
         public async Task<bool> RevokeRefreshTokenAsync(string token)
         {
-            var refreshToken = await _refreshTokenRepository.GetByTokenAsync(token);
+            var refreshToken = await _unitOfWork.RefreshTokens.GetByTokenAsync(token);
 
             if (refreshToken == null || !refreshToken.IsActive)
                 return false;
 
             refreshToken.RevokedOn = DateTime.UtcNow;
-            _refreshTokenRepository.Update(refreshToken);
-            await _refreshTokenRepository.SaveChangesAsync();
+            _unitOfWork.RefreshTokens.Update(refreshToken);
+            await _unitOfWork.SaveChangesAsync();
             return true;
         }
 
         public async Task RevokeAllUserTokensAsync(string userId)
         {
-            var userTokens = await _refreshTokenRepository.GetAllActiveTokensByUserIdAsync(userId);
+            var userTokens = await _unitOfWork.RefreshTokens.GetAllActiveTokensByUserIdAsync(userId);
 
             if (userTokens.Any())
             {
@@ -62,9 +62,10 @@ namespace ECommerce.Infrastructure.Services
                 {
                     token.RevokedOn = DateTime.UtcNow;
                 }
-                _refreshTokenRepository.UpdateRange(userTokens);
-                await _refreshTokenRepository.SaveChangesAsync();
+                _unitOfWork.RefreshTokens.UpdateRange(userTokens);
+                await _unitOfWork.SaveChangesAsync();
             }
         }
     }
 }
+

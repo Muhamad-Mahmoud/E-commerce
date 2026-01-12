@@ -1,4 +1,4 @@
-namespace ECommerce.Application.DTO
+namespace ECommerce.Application.DTO.Auth
 {
     /// <summary>
     /// Result model for authentication operations.

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ECommerce.Application.DTO
+namespace ECommerce.Application.DTO.Auth
 {
     /// <summary>
     /// Register request DTO.
