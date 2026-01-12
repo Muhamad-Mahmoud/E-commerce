@@ -74,9 +74,9 @@ namespace ECommerce.Infrastructure.Repositories
             //  Sorting
             query = p.Sort switch
             {
-                "priceAsc" => query.OrderBy(x => x.Variants.Min(v => v.Price)),
-                "priceDesc" => query.OrderByDescending(x => x.Variants.Min(v => v.Price)),
-                "newest" => query.OrderByDescending(x => x.Id),
+                ProductParams.SortPriceAsc => query.OrderBy(x => x.Variants.Min(v => v.Price)),
+                ProductParams.SortPriceDesc => query.OrderByDescending(x => x.Variants.Min(v => v.Price)),
+                ProductParams.SortNewest => query.OrderByDescending(x => x.Id),
                 _ => query.OrderBy(x => x.Name)
             };
 

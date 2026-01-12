@@ -22,13 +22,6 @@ namespace ECommerce.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetCategories([FromQuery] CategoryParams categoryParams)
         {
-            // If parameters indicate need for filtering/pagination, use Search
-            // Otherwise, we could still use GetAllAsync or just default to Search with defaults
-            
-            // Note: Since CategoryParams has defaults (Page 1, Size 10), it will always look like pagination is requested.
-            // If you want "Get All Without Pagination", user might need a different endpoint or a specific flag.
-            // For now, let's behave like ProductsController and return PagedResult.
-            
             var result = await _categoryService.GetCategoriesAsync(categoryParams);
             return Ok(result);
         }
