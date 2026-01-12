@@ -40,11 +40,21 @@ try
 
     app.UseHttpsRedirection();
 
+    // Use Serilog Request Logging (Before Exception Middleware to log handled exceptions properly with status codes)
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+        {
+            diagnosticContext.Set("CorrelationId", httpContext.TraceIdentifier);
+            if (httpContext.User.Identity?.IsAuthenticated == true)
+            {
+                diagnosticContext.Set("UserId", httpContext.User.Identity.Name);
+            }
+        };
+    });
+
     // Use global exception handling middleware
     app.UseMiddleware<ExceptionMiddleware>();
-
-    // Use custom request logging middleware
-    app.UseMiddleware<RequestLoggingMiddleware>();
 
     app.UseCors("AllowAll");
 
