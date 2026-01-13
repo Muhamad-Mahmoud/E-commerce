@@ -10,13 +10,15 @@ namespace ECommerce.Application.Interfaces.Repositories
     /// </summary>
     public interface IProductRepository : IRepository<Product>
     {
-        // Product-specific query methods
-        Task<Product?> GetWithVariantsAsync(int id, CancellationToken cancellationToken = default);
-        Task<Product?> GetWithFullDetailsAsync(int id, CancellationToken cancellationToken = default);
+        Task<Product?> GetWithVariantsAsync(int id);
+        Task<Product?> GetWithFullDetailsAsync(int id);
         
-        Task<PagedResult<ProductDto>> SearchProductsAsync(ProductParams productParams, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Searches products with filtering (price, category, search term) and pagination.
+        /// </summary>
+        Task<PagedResult<ProductDto>> SearchProductsAsync(ProductParams productParams);
         
-        Task<IEnumerable<Product>> GetPublishedProductsAsync(CancellationToken cancellationToken = default);
-        Task<IEnumerable<Product>> GetByCategoryIdAsync(int categoryId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Product>> GetPublishedProductsAsync();
+        Task<IEnumerable<Product>> GetByCategoryIdAsync(int categoryId);
     }
 }

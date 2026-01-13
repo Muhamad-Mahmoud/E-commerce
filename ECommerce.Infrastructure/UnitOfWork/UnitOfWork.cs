@@ -7,16 +7,12 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ECommerce.Infrastructure.UnitOfWork
 {
-    /// <summary>
-    /// Unit of Work implementation for managing database transactions.
-    /// Provides coordinated access to multiple repositories and transaction management.
-    /// </summary>
+
     public class UnitOfWork : IUnitOfWork
     {
         private readonly AppDbContext _context;
         private IDbContextTransaction? _transaction;
 
-        // Lazy initialization of repositories
         private ICategoryRepository? _categories;
         private IProductRepository? _products;
         private IOrderRepository? _orders;
@@ -27,7 +23,7 @@ namespace ECommerce.Infrastructure.UnitOfWork
             _context = context;
         }
 
-        // ============ Repositories (Lazy Initialization) ============
+        //  Repositories
 
         public ICategoryRepository Categories
             => _categories ??= new CategoryRepository(_context);
@@ -41,47 +37,34 @@ namespace ECommerce.Infrastructure.UnitOfWork
         public IRefreshTokenRepository RefreshTokens
             => _refreshTokens ??= new RefreshTokenRepository(_context);
 
-        // ============ Transaction Management ============
+        //  Transaction Management 
 
-        /// <summary>
-        /// Saves all pending changes to the database.
-        /// For single SaveChanges, EF Core uses implicit transactions automatically.
-        /// </summary>
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             return await _context.SaveChangesAsync(cancellationToken);
         }
 
-        /// <summary>
-        /// Begins an explicit database transaction.
-        /// Use transactions only when multiple SaveChanges or complex operations are involved.
-        /// EF Core handles implicit transactions for single SaveChanges automatically.
-        /// </summary>
-        public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+        public async Task BeginTransactionAsync()
         {
             if (_transaction != null)
                 return; // Transaction already started
 
-            _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            _transaction = await _context.Database.BeginTransactionAsync();
         }
 
-        /// <summary>
-        /// Commits the current transaction and saves all changes.
-        /// Automatically rolls back if an error occurs.
-        /// </summary>
-        public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+        public async Task CommitTransactionAsync()
         {
             if (_transaction == null)
                 throw new InvalidOperationException("No active transaction to commit.");
 
             try
             {
-                await SaveChangesAsync(cancellationToken);
-                await _transaction.CommitAsync(cancellationToken);
+                await SaveChangesAsync();
+                await _transaction.CommitAsync();
             }
             catch
             {
-                await RollbackTransactionAsync(cancellationToken);
+                await RollbackTransactionAsync();
                 throw;
             }
             finally
@@ -91,18 +74,14 @@ namespace ECommerce.Infrastructure.UnitOfWork
             }
         }
 
-        /// <summary>
-        /// Rolls back the current transaction.
-        /// Safe to call even if no transaction is active.
-        /// </summary>
-        public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
+        public async Task RollbackTransactionAsync()
         {
             if (_transaction == null)
                 return; // Nothing to rollback
 
             try
             {
-                await _transaction.RollbackAsync(cancellationToken);
+                await _transaction.RollbackAsync();
             }
             finally
             {
@@ -111,11 +90,7 @@ namespace ECommerce.Infrastructure.UnitOfWork
             }
         }
 
-        // ============ Dispose ============
-
-        /// <summary>
-        /// Disposes the Unit of Work and releases database resources.
-        /// </summary>
+        //  Dispose 
         public void Dispose()
         {
             _transaction?.Dispose();

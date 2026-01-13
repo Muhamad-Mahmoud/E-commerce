@@ -6,56 +6,52 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure.Repositories
 {
-    /// <summary>
-    /// Order repository implementation.
-    /// </summary>
     public class OrderRepository : Repository<Order>, IOrderRepository
     {
         public OrderRepository(AppDbContext context) : base(context)
         {
         }
 
-        public async Task<Order?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<Order?> GetByIdWithDetailsAsync(int id)
         {
-            // Note: Complex filtering in Include requires direct DbContext access
             return await _context.Orders
                 .Include(o => o.OrderItems)
                 .Include(o => o.PaymentTransactions)
-                .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+                .FirstOrDefaultAsync(o => o.Id == id);
         }
 
-        public async Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken cancellationToken = default)
+        public async Task<Order?> GetByOrderNumberAsync(string orderNumber)
         {
-            return await FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, cancellationToken);
+            return await GetFirstAsync(o => o.OrderNumber == orderNumber);
         }
 
-        public async Task<IEnumerable<Order>> GetUserOrdersAsync(string userId, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Order>> GetUserOrdersAsync(string userId)
         {
             return await _context.Orders
                 .Where(o => o.UserId == userId)
                 .OrderByDescending(o => o.CreatedAt)
-                .ToListAsync(cancellationToken);
+                .ToListAsync();
         }
 
-        public async Task<IEnumerable<Order>> GetOrdersByStatusAsync(OrderStatus status, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Order>> GetOrdersByStatusAsync(OrderStatus status)
         {
             return await _context.Orders
                 .Where(o => o.Status == status)
                 .OrderByDescending(o => o.CreatedAt)
-                .ToListAsync(cancellationToken);
+                .ToListAsync();
         }
 
-        public async Task<IEnumerable<Order>> GetRecentOrdersAsync(int count, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Order>> GetRecentOrdersAsync(int count)
         {
             return await _context.Orders
                 .OrderByDescending(o => o.CreatedAt)
                 .Take(count)
-                .ToListAsync(cancellationToken);
+                .ToListAsync();
         }
 
-        public async Task<bool> OrderNumberExistsAsync(string orderNumber, CancellationToken cancellationToken = default)
+        public async Task<bool> OrderNumberExistsAsync(string orderNumber)
         {
-            var order = await FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, cancellationToken);
+            var order = await GetFirstAsync(o => o.OrderNumber == orderNumber);
             return order != null;
         }
     }

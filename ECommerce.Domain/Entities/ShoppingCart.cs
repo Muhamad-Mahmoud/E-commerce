@@ -1,8 +1,7 @@
 ﻿namespace ECommerce.Domain.Entities
 {
-    public class ShoppingCart
+    public class ShoppingCart : BaseEntity
     {
-        public int Id { get; set; }
         public string UserId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

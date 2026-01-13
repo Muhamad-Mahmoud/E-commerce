@@ -36,22 +36,19 @@ namespace ECommerce.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            
-            var result = await _productService.CreateProductAsync(request);
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
+        {            
+            var result = await _productService.CreateProductAsync(request, cancellationToken);
             return CreatedAtAction(nameof(GetProduct), new { id = result.Id }, result);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductRequest request)
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
         {
             if (id != request.Id) return BadRequest("ID mismatch");
-            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var success = await _productService.UpdateProductAsync(id, request);
+            var success = await _productService.UpdateProductAsync(id, request, cancellationToken);
             if (!success) return NotFound();
             
             return NoContent();
@@ -59,9 +56,9 @@ namespace ECommerce.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProduct(int id)
+        public async Task<IActionResult> DeleteProduct(int id, CancellationToken cancellationToken)
         {
-            var success = await _productService.DeleteProductAsync(id);
+            var success = await _productService.DeleteProductAsync(id, cancellationToken);
             if (!success) return NotFound();
             return NoContent();
         }

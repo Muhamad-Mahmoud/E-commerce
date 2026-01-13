@@ -9,14 +9,14 @@ namespace ECommerce.Domain.Interfaces.Repositories
     public interface IOrderRepository : IRepository<Order>
     {
         // Order-specific query methods
-        Task<Order?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default);
-        Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken cancellationToken = default);
+        Task<Order?> GetByIdWithDetailsAsync(int id);
+        Task<Order?> GetByOrderNumberAsync(string orderNumber);
         
-        Task<IEnumerable<Order>> GetUserOrdersAsync(string userId, CancellationToken cancellationToken = default);
-        Task<IEnumerable<Order>> GetOrdersByStatusAsync(OrderStatus status, CancellationToken cancellationToken = default);
-        Task<IEnumerable<Order>> GetRecentOrdersAsync(int count, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Order>> GetUserOrdersAsync(string userId);
+        Task<IEnumerable<Order>> GetOrdersByStatusAsync(OrderStatus status);
+        Task<IEnumerable<Order>> GetRecentOrdersAsync(int count);
         
         // Order-specific command
-        Task<bool> OrderNumberExistsAsync(string orderNumber, CancellationToken cancellationToken = default);
+        Task<bool> OrderNumberExistsAsync(string orderNumber);
     }
 }

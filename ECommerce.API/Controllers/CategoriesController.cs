@@ -1,7 +1,4 @@
-using ECommerce.Application.DTO.Auth;
 using ECommerce.Application.DTO.Categories;
-using ECommerce.Application.DTO.Products;
-using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Services.Categories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +24,7 @@ namespace ECommerce.API.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<IActionResult> GetAllWithoutPagination()
+        public async Task<IActionResult> GetAll()
         {
             var categories = await _categoryService.GetAllAsync();
             return Ok(categories);
@@ -43,19 +40,19 @@ namespace ECommerce.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request)
+        public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request, CancellationToken cancellationToken)
         {
-            var category = await _categoryService.CreateAsync(request);
+            var category = await _categoryService.CreateAsync(request, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryRequest request)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryRequest request , CancellationToken cancellationToken)
         {
             if (id != request.Id) return BadRequest("ID mismatch");
 
-            var updated = await _categoryService.UpdateAsync(request);
+            var updated = await _categoryService.UpdateAsync(request, cancellationToken);
             if (!updated) return NotFound();
 
             return NoContent();
@@ -63,9 +60,9 @@ namespace ECommerce.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            var deleted = await _categoryService.DeleteAsync(id);
+            var deleted = await _categoryService.DeleteAsync(id, cancellationToken);
             if (!deleted) return NotFound();
 
             return NoContent();

@@ -23,7 +23,6 @@ namespace ECommerce.Application.Services
         public async Task<IEnumerable<CategoryDto>> GetAllAsync()
         {
             var categories = await _unitOfWork.Categories.GetAllAsync(
-                default,
                 c => c.ParentCategory
             );
             
@@ -39,7 +38,6 @@ namespace ECommerce.Application.Services
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(
                 id, 
-                default,
                 c => c.ParentCategory
             );
             
@@ -47,28 +45,26 @@ namespace ECommerce.Application.Services
             return _mapper.Map<CategoryDto>(category);
         }
 
-        public async Task<CategoryDto> CreateAsync(CreateCategoryRequest request)
+        public async Task<CategoryDto> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken)
         {
             var category = _mapper.Map<Category>(request);
 
             await _unitOfWork.Categories.AddAsync(category);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             //  Reload with ParentCategory after save
             var savedCategory = await _unitOfWork.Categories.GetByIdAsync(
                 category.Id,
-                default,
                 c => c.ParentCategory
             );
 
             return _mapper.Map<CategoryDto>(savedCategory ?? category);
         }
 
-        public async Task<bool> UpdateAsync(UpdateCategoryRequest request)
+        public async Task<bool> UpdateAsync(UpdateCategoryRequest request, CancellationToken cancellationToken)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(
                 request.Id,
-                default,
                 c => c.ParentCategory
             );
             
@@ -78,18 +74,18 @@ namespace ECommerce.Application.Services
             _mapper.Map(request, category);
 
             _unitOfWork.Categories.Update(category);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return true;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(id);
             if (category == null) return false;
 
             _unitOfWork.Categories.Delete(category);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return true;
         }

@@ -10,6 +10,9 @@ namespace ECommerce.Application.Interfaces.Services.Auth
         Task LogoutAsync(string userId);
         Task<bool> ChangePasswordAsync(ChangePasswordRequest request);
         Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
+        /// <summary>
+        /// Generates new tokens using a valid Refresh Token.
+        /// </summary>
         Task<AuthenticationResult> RefreshTokenAsync(string token);
     }
 }

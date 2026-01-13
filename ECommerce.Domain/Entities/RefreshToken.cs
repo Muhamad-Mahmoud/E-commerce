@@ -3,9 +3,8 @@ namespace ECommerce.Domain.Entities
     /// <summary>
     /// Refresh token for JWT authentication.
     /// </summary>
-    public class RefreshToken
+    public class RefreshToken : BaseEntity
     {
-        public int Id { get; set; }
         public string Token { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
         public DateTime ExpiresAt { get; set; }

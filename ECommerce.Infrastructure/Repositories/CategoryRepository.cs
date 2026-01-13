@@ -16,17 +16,15 @@ namespace ECommerce.Infrastructure.Repositories
         {
         }
 
-        public async Task<Category?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+        public async Task<Category?> GetByNameAsync(string name)
         {
-            return await FirstOrDefaultAsync(c => c.Name == name, cancellationToken);
+            return await GetFirstAsync(c => c.Name == name);
         }
 
-        public async Task<PagedResult<CategoryDto>> SearchCategoriesAsync(CategoryParams p, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<CategoryDto>> SearchCategoriesAsync(CategoryParams p)
         {
-            // Start Query
             var query = _context.Categories
-                .AsNoTracking()
-                .AsQueryable();
+                .AsNoTracking();
 
             //  Filtering
             if (!string.IsNullOrEmpty(p.Search))
@@ -41,7 +39,6 @@ namespace ECommerce.Infrastructure.Repositories
             }
             else if (p.IncludeSubCategories == false)
             {
-                // Only root categories
                 query = query.Where(c => c.ParentCategoryId == null);
             }
 
@@ -49,10 +46,8 @@ namespace ECommerce.Infrastructure.Repositories
             query = query.OrderBy(c => c.ParentCategoryId)
                         .ThenBy(c => c.Name);
 
-            //  Pagination & Count
-            var totalCount = await query.CountAsync(cancellationToken);
+            var totalCount = await query.CountAsync();
 
-            // Projection (Select DTO directly)
             var items = await query
                 .Skip((p.PageNumber - 1) * p.PageSize)
                 .Take(p.PageSize)
@@ -64,7 +59,7 @@ namespace ECommerce.Infrastructure.Repositories
                     ParentCategoryId = c.ParentCategoryId,
                     ParentCategoryName = c.ParentCategory != null ? c.ParentCategory.Name : null
                 })
-                .ToListAsync(cancellationToken);
+                .ToListAsync();
 
             return new PagedResult<CategoryDto>
             {
@@ -75,19 +70,19 @@ namespace ECommerce.Infrastructure.Repositories
             };
         }
 
-        public async Task<IEnumerable<Category>> GetRootCategoriesAsync(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Category>> GetRootCategoriesAsync()
         {
-            return await FindAsync(c => c.ParentCategoryId == null, cancellationToken);
+            return await FindAsync(c => c.ParentCategoryId == null);
         }
 
-        public async Task<IEnumerable<Category>> GetSubCategoriesAsync(int parentId, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Category>> GetSubCategoriesAsync(int parentId)
         {
-            return await FindAsync(c => c.ParentCategoryId == parentId, cancellationToken);
+            return await FindAsync(c => c.ParentCategoryId == parentId);
         }
 
-        public async Task<bool> NameExistsAsync(string name, CancellationToken cancellationToken = default)
+        public async Task<bool> NameExistsAsync(string name)
         {
-            var category = await FirstOrDefaultAsync(c => c.Name == name, cancellationToken);
+            var category = await GetFirstAsync(c => c.Name == name);
             return category != null;
         }
     }

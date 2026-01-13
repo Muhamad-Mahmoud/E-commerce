@@ -32,13 +32,12 @@ namespace ECommerce.Application.Services
             return _mapper.Map<ProductDetailsDto>(product);
         }
 
-        public async Task<bool> UpdateProductAsync(int id, UpdateProductRequest request)
+        public async Task<bool> UpdateProductAsync(int id, UpdateProductRequest request, CancellationToken cancellationToken)
         {
             if (id != request.Id) return false;
 
             var product = await _unitOfWork.Products.GetByIdAsync(
-                id, 
-                default,
+                id,
                 p => p.Category
             );
             
@@ -51,11 +50,11 @@ namespace ECommerce.Application.Services
             _mapper.Map(request, product);
             
             _unitOfWork.Products.Update(product);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return true;
         }
 
-        public async Task<ProductDto> CreateProductAsync(CreateProductRequest request)
+        public async Task<ProductDto> CreateProductAsync(CreateProductRequest request, CancellationToken cancellationToken)
         {
             // Validate Category
             if (!await _unitOfWork.Categories.ExistsAsync(request.CategoryId))
@@ -64,11 +63,11 @@ namespace ECommerce.Application.Services
             var product = _mapper.Map<Product>(request);
             
             await _unitOfWork.Products.AddAsync(product);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            // Reload product to include related data 
             var createdProduct = await _unitOfWork.Products.GetByIdAsync(
                 product.Id,
-                default,
                 p => p.Category,
                 p => p.Variants
             );
@@ -76,13 +75,13 @@ namespace ECommerce.Application.Services
             return _mapper.Map<ProductDto>(createdProduct ?? product);
         }
 
-        public async Task<bool> DeleteProductAsync(int id)
+        public async Task<bool> DeleteProductAsync(int id, CancellationToken cancellationToken)
         {
             var product = await _unitOfWork.Products.GetByIdAsync(id);
             if (product == null) return false;
 
             _unitOfWork.Products.Delete(product);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return true;
         }
     }

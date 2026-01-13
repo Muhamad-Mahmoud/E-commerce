@@ -8,40 +8,37 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure.Repositories
 {
-    /// <summary>
-    /// Product repository implementation.
-    /// </summary>
     public class ProductRepository : Repository<Product>, IProductRepository
     {
         public ProductRepository(AppDbContext context) : base(context)
         {
         }
 
-        public async Task<Product?> GetWithVariantsAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<Product?> GetWithVariantsAsync(int id)
         {
-            return await GetByIdAsync(id, cancellationToken, p => p.Variants);
+            return await GetByIdAsync(id, p => p.Variants);
         }
 
-        public async Task<Product?> GetWithFullDetailsAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<Product?> GetWithFullDetailsAsync(int id)
         {
-            return await GetByIdAsync(id, cancellationToken, 
+            return await GetByIdAsync(id, 
                 p => p.Category,
                 p => p.Variants, 
                 p => p.Images, 
                 p => p.Reviews);
         }
 
-        public async Task<IEnumerable<Product>> GetPublishedProductsAsync(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Product>> GetPublishedProductsAsync()
         {
-            return await FindAsync(p => p.Status == ProductStatus.Published, cancellationToken, p => p.Variants);
+            return await FindAsync(p => p.Status == ProductStatus.Published, p => p.Variants);
         }
 
-        public async Task<IEnumerable<Product>> GetByCategoryIdAsync(int categoryId, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Product>> GetByCategoryIdAsync(int categoryId)
         {
-            return await FindAsync(p => p.CategoryId == categoryId, cancellationToken, p => p.Variants);
+            return await FindAsync(p => p.CategoryId == categoryId, p => p.Variants);
         }
 
-        public async Task<PagedResult<ProductDto>> SearchProductsAsync(ProductParams p, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<ProductDto>> SearchProductsAsync(ProductParams p)
         {
             var query = _context.Products
                 .AsNoTracking()
@@ -81,7 +78,7 @@ namespace ECommerce.Infrastructure.Repositories
             };
 
             // Pagination & Count
-            var totalCount = await query.CountAsync(cancellationToken);
+            var totalCount = await query.CountAsync();
 
             //  Projection to DTO
             var items = await query
@@ -100,7 +97,7 @@ namespace ECommerce.Infrastructure.Repositories
                         ? pr.Images.FirstOrDefault(i => i.IsPrimary)!.ImageUrl 
                         : (pr.Images.Any() ? pr.Images.FirstOrDefault()!.ImageUrl : null)
                 })
-                .ToListAsync(cancellationToken);
+                .ToListAsync();
 
             return new PagedResult<ProductDto>
             {

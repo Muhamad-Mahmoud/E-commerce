@@ -15,9 +15,12 @@ namespace ECommerce.Domain.Interfaces
         IRefreshTokenRepository RefreshTokens { get; }
 
         // Transaction management
+        /// <summary>
+        /// Saves all pending changes to the database.
+        /// </summary>
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-        Task BeginTransactionAsync(CancellationToken cancellationToken = default);
-        Task CommitTransactionAsync(CancellationToken cancellationToken = default);
-        Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
+        Task BeginTransactionAsync();
+        Task CommitTransactionAsync();
+        Task RollbackTransactionAsync();
     }
 }

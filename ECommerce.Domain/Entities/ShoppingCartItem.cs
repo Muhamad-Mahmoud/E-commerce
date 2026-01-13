@@ -1,8 +1,7 @@
 ﻿namespace ECommerce.Domain.Entities
 {
-    public class ShoppingCartItem
+    public class ShoppingCartItem : BaseEntity
     {
-        public int Id { get; set; }
         public int ShoppingCartId { get; set; }
         public ShoppingCart ShoppingCart { get; set; }
         public int ProductVariantId { get; set; }

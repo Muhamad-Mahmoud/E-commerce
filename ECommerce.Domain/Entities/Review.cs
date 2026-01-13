@@ -1,8 +1,7 @@
 ﻿namespace ECommerce.Domain.Entities
 {
-    public class Review
+    public class Review : BaseEntity
     {
-        public int Id { get; set; }
         public int ProductId { get; set; }
         public Product Product { get; set; }
 

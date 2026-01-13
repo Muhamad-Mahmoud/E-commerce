@@ -1,3 +1,4 @@
+using ECommerce.Domain.Entities;
 using ECommerce.Domain.Interfaces.Repositories;
 using ECommerce.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -5,10 +6,7 @@ using System.Linq.Expressions;
 
 namespace ECommerce.Infrastructure.Repositories
 {
-    /// <summary>
-    /// Generic repository implementation for common CRUD operations.
-    /// </summary>
-    public class Repository<T> : IRepository<T> where T : class
+    public class Repository<T> : IRepository<T> where T : BaseEntity
     {
         protected readonly AppDbContext _context;
         protected readonly DbSet<T> _dbSet;
@@ -19,36 +17,42 @@ namespace ECommerce.Infrastructure.Repositories
             _dbSet = context.Set<T>();
         }
 
-        // ============ Query Operations (AsNoTracking for performance) ============
+        // Query Operations (Read-only) 
 
-        public virtual async Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default, params Expression<Func<T, object>>[] includes)
+        public virtual async Task<T?> GetByIdAsync(
+            int id,
+            params Expression<Func<T, object>>[] includes)
         {
             var query = ApplyIncludes(_dbSet.AsNoTracking(), includes);
-            return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id, cancellationToken);
+            return await query.FirstOrDefaultAsync(e => e.Id == id);
         }
 
-        public virtual async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default, params Expression<Func<T, object>>[] includes)
+        public virtual async Task<IEnumerable<T>> GetAllAsync(
+            params Expression<Func<T, object>>[] includes)
         {
             var query = ApplyIncludes(_dbSet.AsNoTracking(), includes);
-            return await query.ToListAsync(cancellationToken);
+            return await query.ToListAsync();
         }
 
-        public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default, params Expression<Func<T, object>>[] includes)
+        public virtual async Task<IEnumerable<T>> FindAsync(
+            Expression<Func<T, bool>> predicate,
+            params Expression<Func<T, object>>[] includes)
         {
             var query = ApplyIncludes(_dbSet.AsNoTracking(), includes);
-            return await query.Where(predicate).ToListAsync(cancellationToken);
+            return await query.Where(predicate).ToListAsync();
         }
 
-        public virtual async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default, params Expression<Func<T, object>>[] includes)
+        public virtual async Task<T?> GetFirstAsync(
+            Expression<Func<T, bool>> predicate,
+            params Expression<Func<T, object>>[] includes)
         {
             var query = ApplyIncludes(_dbSet.AsNoTracking(), includes);
-            return await query.FirstOrDefaultAsync(predicate, cancellationToken);
+            return await query.FirstOrDefaultAsync(predicate);
         }
 
-        /// <summary>
-        /// Applies Include expressions to query for eager loading.
-        /// </summary>
-        protected virtual IQueryable<T> ApplyIncludes(IQueryable<T> query, params Expression<Func<T, object>>[] includes)
+        protected virtual IQueryable<T> ApplyIncludes(
+            IQueryable<T> query,
+            params Expression<Func<T, object>>[] includes)
         {
             if (includes != null)
             {
@@ -60,16 +64,16 @@ namespace ECommerce.Infrastructure.Repositories
             return query;
         }
 
-        // ============ Command Operations ============
+        // Command Operations 
 
-        public virtual async Task AddAsync(T entity, CancellationToken cancellationToken = default)
+        public virtual async Task AddAsync(T entity)
         {
-            await _dbSet.AddAsync(entity, cancellationToken);
+            await _dbSet.AddAsync(entity);
         }
 
-        public virtual async Task AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+        public virtual async Task AddRangeAsync(IEnumerable<T> entities)
         {
-            await _dbSet.AddRangeAsync(entities, cancellationToken);
+            await _dbSet.AddRangeAsync(entities);
         }
 
         public virtual void Update(T entity)
@@ -92,21 +96,21 @@ namespace ECommerce.Infrastructure.Repositories
             _dbSet.RemoveRange(entities);
         }
 
-        // ============ Utility Operations ============
+        //  Utility 
 
-        public virtual async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
+        public virtual async Task<bool> ExistsAsync(int id)
         {
-            return await _dbSet.AsNoTracking().AnyAsync(e => EF.Property<int>(e, "Id") == id, cancellationToken);
+            return await _dbSet.AnyAsync(e => e.Id == id);
         }
 
-        public virtual async Task<int> CountAsync(CancellationToken cancellationToken = default)
+        public virtual async Task<int> CountAsync()
         {
-            return await _dbSet.AsNoTracking().CountAsync(cancellationToken);
+            return await _dbSet.CountAsync();
         }
 
-        public virtual async Task<int> CountAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+        public virtual async Task<int> CountAsync(Expression<Func<T, bool>> predicate)
         {
-            return await _dbSet.AsNoTracking().CountAsync(predicate, cancellationToken);
+            return await _dbSet.CountAsync(predicate);
         }
     }
 }
