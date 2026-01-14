@@ -7,9 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure.Repositories
 {
-    /// <summary>
-    /// Category repository implementation.
-    /// </summary>
     public class CategoryRepository : Repository<Category>, ICategoryRepository
     {
         public CategoryRepository(AppDbContext context) : base(context)

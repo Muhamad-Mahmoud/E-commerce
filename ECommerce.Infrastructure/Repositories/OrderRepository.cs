@@ -14,36 +14,41 @@ namespace ECommerce.Infrastructure.Repositories
 
         public async Task<Order?> GetByIdWithDetailsAsync(int id)
         {
-            return await _context.Orders
-                .Include(o => o.OrderItems)
-                .Include(o => o.PaymentTransactions)
-                .FirstOrDefaultAsync(o => o.Id == id);
+            return await GetByIdAsync(id,
+                o => o.OrderItems,
+                o => o.PaymentTransactions);
         }
 
         public async Task<Order?> GetByOrderNumberAsync(string orderNumber)
         {
-            return await GetFirstAsync(o => o.OrderNumber == orderNumber);
+            return await GetFirstAsync(
+                o => o.OrderNumber == orderNumber,
+                o => o.OrderItems,
+                o => o.PaymentTransactions);
         }
 
         public async Task<IEnumerable<Order>> GetUserOrdersAsync(string userId)
         {
-            return await _context.Orders
-                .Where(o => o.UserId == userId)
-                .OrderByDescending(o => o.CreatedAt)
-                .ToListAsync();
+            return await FindAsync(
+                o => o.UserId == userId,
+                o => o.OrderItems,
+                o => o.PaymentTransactions);
         }
 
         public async Task<IEnumerable<Order>> GetOrdersByStatusAsync(OrderStatus status)
         {
-            return await _context.Orders
-                .Where(o => o.Status == status)
-                .OrderByDescending(o => o.CreatedAt)
-                .ToListAsync();
+            return await FindAsync(
+                o => o.Status == status,
+                o => o.OrderItems,
+                o => o.PaymentTransactions);
         }
 
         public async Task<IEnumerable<Order>> GetRecentOrdersAsync(int count)
         {
             return await _context.Orders
+                .AsNoTracking()
+                .Include(o => o.OrderItems)
+                .Include(o => o.PaymentTransactions)
                 .OrderByDescending(o => o.CreatedAt)
                 .Take(count)
                 .ToListAsync();
@@ -51,8 +56,9 @@ namespace ECommerce.Infrastructure.Repositories
 
         public async Task<bool> OrderNumberExistsAsync(string orderNumber)
         {
-            var order = await GetFirstAsync(o => o.OrderNumber == orderNumber);
-            return order != null;
+            return await _context.Orders
+                .AsNoTracking()
+                .AnyAsync(o => o.OrderNumber == orderNumber);
         }
     }
 }

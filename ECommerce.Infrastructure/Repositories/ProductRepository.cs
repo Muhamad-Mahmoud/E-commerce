@@ -38,6 +38,9 @@ namespace ECommerce.Infrastructure.Repositories
             return await FindAsync(p => p.CategoryId == categoryId, p => p.Variants);
         }
 
+        /// <summary>
+        /// Searches for products with pagination, filtering, and sorting.
+        /// </summary>
         public async Task<PagedResult<ProductDto>> SearchProductsAsync(ProductParams p)
         {
             var query = _context.Products

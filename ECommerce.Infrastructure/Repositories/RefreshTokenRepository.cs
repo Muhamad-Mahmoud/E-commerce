@@ -14,12 +14,14 @@ namespace ECommerce.Infrastructure.Repositories
         public async Task<RefreshToken?> GetByTokenAsync(string token)
         {
             return await _context.Set<RefreshToken>()
+                .AsNoTracking()
                 .SingleOrDefaultAsync(r => r.Token == token);
         }
 
         public async Task<List<RefreshToken>> GetAllActiveTokensByUserIdAsync(string userId)
         {
             return await _context.Set<RefreshToken>()
+                .AsNoTracking()
                 .Where(t => t.UserId == userId && t.RevokedOn == null)
                 .ToListAsync();
         }
