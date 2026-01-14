@@ -12,6 +12,13 @@ namespace ECommerce.Infrastructure.Persistence.Config
         public void Configure(EntityTypeBuilder<ShoppingCart> builder)
         {
             builder.HasKey(sc => sc.Id);
+
+            builder.HasIndex(sc => sc.UserId)
+                   .IsUnique();
+
+            builder.Property(sc => sc.UserId)
+                   .IsRequired();
         }
+
     }
 }

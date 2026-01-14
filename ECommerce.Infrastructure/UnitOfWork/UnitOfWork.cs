@@ -8,20 +8,15 @@ using Microsoft.EntityFrameworkCore.Storage;
 namespace ECommerce.Infrastructure.UnitOfWork
 {
 
-    public class UnitOfWork : IUnitOfWork
+    public class unitOfWork(AppDbContext context) : IUnitOfWork
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _context = context;
         private IDbContextTransaction? _transaction;
 
         private ICategoryRepository? _categories;
         private IProductRepository? _products;
         private IOrderRepository? _orders;
         private IRefreshTokenRepository? _refreshTokens;
-
-        public UnitOfWork(AppDbContext context)
-        {
-            _context = context;
-        }
 
         //  Repositories
 
@@ -36,6 +31,10 @@ namespace ECommerce.Infrastructure.UnitOfWork
 
         public IRefreshTokenRepository RefreshTokens
             => _refreshTokens ??= new RefreshTokenRepository(_context);
+
+        private IShoppingCartRepository? _shoppingCarts;
+        public IShoppingCartRepository ShoppingCarts
+            => _shoppingCarts ??= new ShoppingCartRepository(_context);
 
         //  Transaction Management 
 

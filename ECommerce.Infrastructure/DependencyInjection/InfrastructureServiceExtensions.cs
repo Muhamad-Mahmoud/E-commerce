@@ -17,6 +17,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using ECommerce.Domain.Interfaces;
+using ECommerce.Infrastructure.UnitOfWork;
+using ECommerce.Application.Interfaces.Services.Cart;
+using ECommerce.Application.Services.Cart;
 
 namespace ECommerce.Infrastructure.DependencyInjection
 {
@@ -36,12 +40,12 @@ namespace ECommerce.Infrastructure.DependencyInjection
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
             });
 
-            // 2. ASP.NET Core Identity
+            // ASP.NET Core Identity
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<AppDbContext>()
                 .AddDefaultTokenProviders();
 
-            // 3. configuration Authentication & JWT
+            // configuration Authentication & JWT
             services.Configure<JWT>(configuration.GetSection("JwtSettings"));
             
             // Map to object directly for configuring AddJwtBearer immediately
@@ -69,24 +73,18 @@ namespace ECommerce.Infrastructure.DependencyInjection
                 };
             });
 
-            // 4. Register Repositories
-            services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-            services.AddScoped<IProductRepository, ProductRepository>();
-            services.AddScoped<ICategoryRepository, CategoryRepository>();
-            services.AddScoped<IOrderRepository, OrderRepository>();
-            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            // Register Unit of Work
+            services.AddScoped<IUnitOfWork, unitOfWork>();
 
-            // 4.1 Register Unit of Work
-            services.AddScoped<ECommerce.Domain.Interfaces.IUnitOfWork, ECommerce.Infrastructure.UnitOfWork.UnitOfWork>();
-
-            // 5. Register Authentication Services
+            // Register Authentication Services
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IRefreshTokenService, RefreshTokenService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IShoppingCartService, ShoppingCartService>();
 
-            // 6. Configure Identity Options
+            //  Configure Identity Options
             services.ConfigureIdentity();
 
             return services;

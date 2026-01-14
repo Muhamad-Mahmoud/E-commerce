@@ -1,4 +1,5 @@
 using AutoMapper;
+using ECommerce.Application.DTO.Cart;
 using ECommerce.Application.DTO.Categories;
 using ECommerce.Application.DTO.Products;
 using ECommerce.Domain.Entities;
@@ -31,6 +32,21 @@ namespace ECommerce.Application.Mapping
             CreateMap<CreateProductRequest, Product>();
             CreateMap<UpdateProductRequest, Product>();
             CreateMap<CreateVariantRequest, ProductVariant>();
+
+             // Cart Mappings
+            CreateMap<ShoppingCartItem, ShoppingCartItemDto>()
+                .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductVariant.ProductId))
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.ProductVariant.Product.Name))
+                .ForMember(dest => dest.VariantName, opt => opt.MapFrom(src => src.ProductVariant.VariantName))
+                .ForMember(dest => dest.SKU, opt => opt.MapFrom(src => src.ProductVariant.SKU))
+                .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.Quantity * src.UnitPrice))
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => 
+                    src.ProductVariant.Images.Any() ? src.ProductVariant.Images.First().ImageUrl : 
+                    (src.ProductVariant.Product.Images.Any(i => i.IsPrimary) ? src.ProductVariant.Product.Images.First(i => i.IsPrimary).ImageUrl : 
+                    (src.ProductVariant.Product.Images.Any() ? src.ProductVariant.Product.Images.First().ImageUrl : null))));
+
+            CreateMap<ShoppingCart, ShoppingCartDto>()
+                .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.Items.Sum(i => i.Quantity * i.UnitPrice)));
         }
     }
 }

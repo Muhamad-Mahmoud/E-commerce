@@ -1,4 +1,5 @@
 using Microsoft.OpenApi.Models;
+using System.Reflection;
 using System.Text;
 
 namespace ECommerce.API.Extensions
@@ -30,6 +31,18 @@ namespace ECommerce.API.Extensions
                     Version = "v1",
                     Description = "E-Commerce Application API"
                 });
+
+                // Add XML comments from Application project
+                var applicationXmlFile = $"{Assembly.Load("ECommerce.Application").GetName().Name}.xml";
+                var applicationXmlPath = Path.Combine(AppContext.BaseDirectory, applicationXmlFile);
+                if (File.Exists(applicationXmlPath))
+                    options.IncludeXmlComments(applicationXmlPath);
+
+                // Add XML comments from API project
+                var apiXmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var apiXmlPath = Path.Combine(AppContext.BaseDirectory, apiXmlFile);
+                if (File.Exists(apiXmlPath))
+                    options.IncludeXmlComments(apiXmlPath);
 
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {

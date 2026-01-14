@@ -13,6 +13,7 @@ namespace ECommerce.Domain.Interfaces
         IProductRepository Products { get; }
         IOrderRepository Orders { get; }
         IRefreshTokenRepository RefreshTokens { get; }
+        IShoppingCartRepository ShoppingCarts { get; }
 
         // Transaction management
         /// <summary>
