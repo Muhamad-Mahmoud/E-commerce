@@ -1,8 +1,8 @@
+using System.Linq.Expressions;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Interfaces.Repositories;
 using ECommerce.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
 namespace ECommerce.Infrastructure.Repositories
 {

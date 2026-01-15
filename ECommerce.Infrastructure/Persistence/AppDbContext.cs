@@ -1,8 +1,8 @@
+using System.Reflection;
 using ECommerce.Domain.Entities;
 using ECommerce.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 
 namespace ECommerce.Infrastructure.Persistence
 {

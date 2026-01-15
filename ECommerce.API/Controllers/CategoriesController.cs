@@ -1,5 +1,6 @@
-using ECommerce.Application.DTO.Categories;
-using ECommerce.Application.Interfaces.Services.Categories;
+using ECommerce.Application.DTO.Categories.Requests;
+using ECommerce.Application.DTO.Pagination;
+using ECommerce.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -95,7 +96,7 @@ namespace ECommerce.API.Controllers
         /// <response code="404">Category not found.</response>
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryRequest request , CancellationToken cancellationToken)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryRequest request, CancellationToken cancellationToken)
         {
             if (id != request.Id) return BadRequest("ID mismatch");
 

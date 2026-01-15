@@ -1,37 +1,25 @@
+using System.Text;
+using ECommerce.Application.Interfaces.Services;
 using ECommerce.Application.Interfaces.Services.Auth;
-using ECommerce.Application.Interfaces.Services.Categories;
-using ECommerce.Application.Interfaces.Services.Products;
-using ECommerce.Application.Interfaces.Repositories;
 using ECommerce.Application.Services;
-using ECommerce.Domain.Entities;
-using ECommerce.Domain.Interfaces.Repositories;
+using ECommerce.Domain.Interfaces;
 using ECommerce.Infrastructure.Helper;
 using ECommerce.Infrastructure.Identity;
 using ECommerce.Infrastructure.Persistence;
-using ECommerce.Infrastructure.Repositories;
+using ECommerce.Infrastructure.Services.Auth;
 using ECommerce.Infrastructure.Services;
+using ECommerce.Infrastructure.UnitOfWork;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using ECommerce.Domain.Interfaces;
-using ECommerce.Infrastructure.UnitOfWork;
-using ECommerce.Application.Interfaces.Services.Cart;
-using ECommerce.Application.Services.Cart;
 
 namespace ECommerce.Infrastructure.DependencyInjection
 {
-    /// <summary>
-    /// Infrastructure layer dependency injection configuration.
-    /// </summary>
     public static class InfrastructureServiceExtensions
     {
-        /// <summary>
-        /// Registers all infrastructure services (Context, Identity, Repositories).
-        /// </summary>
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
             // Database Context
@@ -47,10 +35,10 @@ namespace ECommerce.Infrastructure.DependencyInjection
 
             // configuration Authentication & JWT
             services.Configure<JWT>(configuration.GetSection("JwtSettings"));
-            
+
             // Map to object directly for configuring AddJwtBearer immediately
             var jwtOptions = configuration.GetSection("JwtSettings").Get<JWT>();
-            
+
             if (jwtOptions == null) throw new Exception("JWT Settings are not configured.");
 
             services.AddAuthentication(options =>
@@ -83,6 +71,7 @@ namespace ECommerce.Infrastructure.DependencyInjection
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IShoppingCartService, ShoppingCartService>();
+            services.AddScoped<IOrderService, OrderService>();
 
             //  Configure Identity Options
             services.ConfigureIdentity();
@@ -90,9 +79,6 @@ namespace ECommerce.Infrastructure.DependencyInjection
             return services;
         }
 
-        /// <summary>
-        /// Configures ASP.NET Core Identity options.
-        /// </summary>
         private static IServiceCollection ConfigureIdentity(this IServiceCollection services)
         {
             services.Configure<IdentityOptions>(options =>

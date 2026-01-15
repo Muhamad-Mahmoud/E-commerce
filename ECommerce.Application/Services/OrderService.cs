@@ -1,0 +1,170 @@
+using AutoMapper;
+using ECommerce.Application.DTO.Orders.Responses;
+using ECommerce.Application.DTO.Pagination;
+using ECommerce.Application.Interfaces.Services;
+using ECommerce.Domain.Entities;
+using ECommerce.Domain.Enums;
+using ECommerce.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
+
+namespace ECommerce.Application.Services
+{
+    public class OrderService : IOrderService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+        private readonly ILogger<OrderService> _logger;
+        private static readonly Random _random = new Random();
+
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger)
+        {
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+            _logger = logger;
+        }
+
+        public async Task<OrderResponse> CreateOrderAsync(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required", nameof(userId));
+
+            var cart = await _unitOfWork.ShoppingCarts.GetByUserIdAsync(userId);
+            if (cart == null || !cart.Items.Any())
+            {
+                _logger.LogWarning("User {UserId} attempted to create order with empty cart", userId);
+                throw new InvalidOperationException("Shopping cart is empty.");
+            }
+
+            var order = new Order
+            {
+                UserId = userId,
+                OrderNumber = GenerateOrderNumber(),
+                Status = OrderStatus.Pending,
+                PaymentStatus = PaymentStatus.Pending,
+                CreatedAt = DateTime.UtcNow,
+                OrderItems = new List<OrderItem>()
+            };
+
+            foreach (var cartItem in cart.Items)
+            {
+                var orderItem = new OrderItem
+                {
+                    ProductVariantId = cartItem.ProductVariantId,
+                    ProductName = cartItem.ProductVariant.Product.Name + " - " + cartItem.ProductVariant.SKU,
+                    UnitPrice = cartItem.ProductVariant.Price,
+                    Quantity = cartItem.Quantity,
+                    ItemTotal = cartItem.ProductVariant.Price * cartItem.Quantity
+                };
+                order.OrderItems.Add(orderItem);
+            }
+
+            order.TotalAmount = order.OrderItems.Sum(i => i.ItemTotal);
+
+            await _unitOfWork.Orders.AddAsync(order);
+            _unitOfWork.ShoppingCarts.Delete(cart);
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("Order {OrderNumber} created for user {UserId}", order.OrderNumber, userId);
+            return _mapper.Map<OrderResponse>(order);
+        }
+
+        public async Task<OrderResponse> GetOrderByIdAsync(int id, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required", nameof(userId));
+
+            var order = await _unitOfWork.Orders.GetByIdWithDetailsAsync(id);
+            if (order == null)
+            {
+                _logger.LogWarning("Order {OrderId} not found", id);
+                throw new KeyNotFoundException("Order not found.");
+            }
+
+            if (order.UserId != userId)
+            {
+                _logger.LogWarning("User {UserId} attempted unauthorized access to order {OrderId} belonging to user {OrderOwnerId}",
+                    userId, id, order.UserId);
+                throw new UnauthorizedAccessException("You are not authorized to view this order.");
+            }
+
+            return _mapper.Map<OrderResponse>(order);
+        }
+
+        public async Task<IEnumerable<OrderResponse>> GetUserOrdersAsync(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required", nameof(userId));
+
+            var orders = await _unitOfWork.Orders.GetUserOrdersAsync(userId);
+            return _mapper.Map<IEnumerable<OrderResponse>>(orders);
+        }
+
+        public async Task<OrderResponse> UpdateOrderStatusAsync(int id, OrderStatus status)
+        {
+            var order = await _unitOfWork.Orders.GetByIdAsync(id);
+            if (order == null)
+            {
+                _logger.LogWarning("Attempt to update status for non-existent order {OrderId}", id);
+                throw new KeyNotFoundException("Order not found.");
+            }
+
+            if (!IsValidStatusTransition(order.Status, status))
+            {
+                _logger.LogWarning("Invalid status transition attempt for order {OrderId} from {CurrentStatus} to {NewStatus}",
+                    id, order.Status, status);
+                throw new InvalidOperationException($"Cannot transition from {order.Status} to {status}.");
+            }
+
+            var previousStatus = order.Status;
+            order.Status = status;
+            _unitOfWork.Orders.Update(order);
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation("Order {OrderId} status changed from {PreviousStatus} to {NewStatus}",
+                id, previousStatus, status);
+            return _mapper.Map<OrderResponse>(order);
+        }
+
+        public async Task<PagedResult<OrderResponse>> SearchOrdersAsync(OrderParams orderParams, string? userId = null)
+        {
+            try
+            {
+                var pagedOrders = await _unitOfWork.Orders.SearchOrdersAsync(orderParams, userId);
+
+                return new PagedResult<OrderResponse>
+                {
+                    Items = _mapper.Map<List<OrderResponse>>(pagedOrders.Items),
+                    TotalCount = pagedOrders.TotalCount,
+                    PageNumber = pagedOrders.PageNumber,
+                    PageSize = pagedOrders.PageSize
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching orders with parameters: {@OrderParams}, UserId: {UserId}",
+                    orderParams, userId);
+                throw;
+            }
+        }
+
+        private string GenerateOrderNumber()
+        {
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            var randomNumber = _random.Next(1000, 9999);
+            return $"ORD-{timestamp}-{randomNumber}";
+        }
+
+        private bool IsValidStatusTransition(OrderStatus currentStatus, OrderStatus newStatus)
+        {
+            return currentStatus switch
+            {
+                OrderStatus.Pending => newStatus is OrderStatus.Processing or OrderStatus.Cancelled,
+                OrderStatus.Processing => newStatus is OrderStatus.Shipped or OrderStatus.Cancelled,
+                OrderStatus.Shipped => newStatus is OrderStatus.Delivered,
+                OrderStatus.Delivered => false,
+                OrderStatus.Cancelled => false,
+                _ => false
+            };
+        }
+    }
+}

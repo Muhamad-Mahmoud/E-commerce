@@ -1,4 +1,4 @@
-using ECommerce.Application.DTO.Categories;
+using ECommerce.Application.DTO.Categories.Responses;
 using ECommerce.Application.DTO.Pagination;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Interfaces.Repositories;
@@ -18,7 +18,7 @@ namespace ECommerce.Application.Interfaces.Repositories
         /// <summary>
         /// Searches categories with filtering and pagination.
         /// </summary>
-        Task<PagedResult<CategoryDto>> SearchCategoriesAsync(CategoryParams categoryParams);
+        Task<PagedResult<CategoryResponse>> SearchCategoriesAsync(CategoryParams categoryParams);
 
         /// <summary>
         /// Gets all root categories (no parent category).

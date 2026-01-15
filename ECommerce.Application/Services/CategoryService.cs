@@ -1,11 +1,10 @@
 using AutoMapper;
-using ECommerce.Application.DTO.Auth;
-using ECommerce.Application.DTO.Categories;
-using ECommerce.Application.DTO.Products;
+using ECommerce.Application.DTO.Categories.Requests;
+using ECommerce.Application.DTO.Categories.Responses;
 using ECommerce.Application.DTO.Pagination;
-using ECommerce.Domain.Interfaces;
+using ECommerce.Application.Interfaces.Services;
 using ECommerce.Domain.Entities;
-using ECommerce.Application.Interfaces.Services.Categories;
+using ECommerce.Domain.Interfaces;
 
 namespace ECommerce.Application.Services
 {
@@ -20,32 +19,32 @@ namespace ECommerce.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<CategoryDto>> GetAllAsync()
+        public async Task<IEnumerable<CategoryResponse>> GetAllAsync()
         {
             var categories = await _unitOfWork.Categories.GetAllAsync(
                 c => c.ParentCategory
             );
-            
-            return _mapper.Map<IEnumerable<CategoryDto>>(categories);
+
+            return _mapper.Map<IEnumerable<CategoryResponse>>(categories);
         }
 
-        public async Task<PagedResult<CategoryDto>> GetCategoriesAsync(CategoryParams categoryParams)
+        public async Task<PagedResult<CategoryResponse>> GetCategoriesAsync(CategoryParams categoryParams)
         {
             return await _unitOfWork.Categories.SearchCategoriesAsync(categoryParams);
         }
 
-        public async Task<CategoryDto?> GetByIdAsync(int id)
+        public async Task<CategoryResponse?> GetByIdAsync(int id)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(
-                id, 
+                id,
                 c => c.ParentCategory
             );
-            
+
             if (category == null) return null;
-            return _mapper.Map<CategoryDto>(category);
+            return _mapper.Map<CategoryResponse>(category);
         }
 
-        public async Task<CategoryDto> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken)
+        public async Task<CategoryResponse> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken)
         {
             var category = _mapper.Map<Category>(request);
 
@@ -58,7 +57,7 @@ namespace ECommerce.Application.Services
                 c => c.ParentCategory
             );
 
-            return _mapper.Map<CategoryDto>(savedCategory ?? category);
+            return _mapper.Map<CategoryResponse>(savedCategory ?? category);
         }
 
         public async Task<bool> UpdateAsync(UpdateCategoryRequest request, CancellationToken cancellationToken)
@@ -67,7 +66,7 @@ namespace ECommerce.Application.Services
                 request.Id,
                 c => c.ParentCategory
             );
-            
+
             if (category == null) return false;
 
             // Use Mapper to update existing entity

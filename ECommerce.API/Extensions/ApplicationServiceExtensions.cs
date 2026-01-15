@@ -1,6 +1,5 @@
-using Microsoft.OpenApi.Models;
 using System.Reflection;
-using System.Text;
+using Microsoft.OpenApi.Models;
 
 namespace ECommerce.API.Extensions
 {

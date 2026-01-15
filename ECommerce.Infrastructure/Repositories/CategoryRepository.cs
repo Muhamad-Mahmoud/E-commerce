@@ -1,7 +1,7 @@
-using ECommerce.Domain.Entities;
-using ECommerce.Application.Interfaces.Repositories;
-using ECommerce.Application.DTO.Categories;
+using ECommerce.Application.DTO.Categories.Responses;
 using ECommerce.Application.DTO.Pagination;
+using ECommerce.Application.Interfaces.Repositories;
+using ECommerce.Domain.Entities;
 using ECommerce.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,7 +18,7 @@ namespace ECommerce.Infrastructure.Repositories
             return await GetFirstAsync(c => c.Name == name);
         }
 
-        public async Task<PagedResult<CategoryDto>> SearchCategoriesAsync(CategoryParams p)
+        public async Task<PagedResult<CategoryResponse>> SearchCategoriesAsync(CategoryParams p)
         {
             var query = _context.Categories
                 .AsNoTracking();
@@ -48,7 +48,7 @@ namespace ECommerce.Infrastructure.Repositories
             var items = await query
                 .Skip((p.PageNumber - 1) * p.PageSize)
                 .Take(p.PageSize)
-                .Select(c => new CategoryDto
+                .Select(c => new CategoryResponse
                 {
                     Id = c.Id,
                     Name = c.Name,
@@ -58,7 +58,7 @@ namespace ECommerce.Infrastructure.Repositories
                 })
                 .ToListAsync();
 
-            return new PagedResult<CategoryDto>
+            return new PagedResult<CategoryResponse>
             {
                 Items = items,
                 TotalCount = totalCount,

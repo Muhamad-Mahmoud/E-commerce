@@ -1,5 +1,5 @@
-using ECommerce.Application.DTO;
-using ECommerce.Application.DTO.Auth;
+using ECommerce.Application.DTO.Auth.Requests;
+using ECommerce.Application.DTO.Auth.Responses;
 
 namespace ECommerce.Application.Interfaces.Services.Auth
 {
@@ -11,12 +11,12 @@ namespace ECommerce.Application.Interfaces.Services.Auth
         /// <summary>
         /// Registers a new user account with email and password.
         /// </summary>
-        Task<AuthenticationResult> RegisterAsync(RegisterRequest request);
+        Task<AuthenticationResponse> RegisterAsync(RegisterRequest request);
 
         /// <summary>
         /// Authenticates a user and returns JWT tokens.
         /// </summary>
-        Task<AuthenticationResult> LoginAsync(LoginRequest request);
+        Task<AuthenticationResponse> LoginAsync(LoginRequest request);
 
         /// <summary>
         /// Logs out a user by revoking their refresh tokens.
@@ -36,7 +36,7 @@ namespace ECommerce.Application.Interfaces.Services.Auth
         /// <summary>
         /// Generates new JWT tokens using a valid refresh token.
         /// </summary>
-        Task<AuthenticationResult> RefreshTokenAsync(string token);
+        Task<AuthenticationResponse> RefreshTokenAsync(string token);
     }
 }
 

@@ -1,8 +1,6 @@
-using ECommerce.Application.DTO.Auth;
-using ECommerce.Application.DTO.Categories;
-using ECommerce.Application.DTO.Products;
 using ECommerce.Application.DTO.Pagination;
-using ECommerce.Application.Interfaces.Services.Products;
+using ECommerce.Application.DTO.Products.Requests;
+using ECommerce.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -67,7 +65,7 @@ namespace ECommerce.API.Controllers
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
-        {            
+        {
             var result = await _productService.CreateProductAsync(request, cancellationToken);
             return CreatedAtAction(nameof(GetProduct), new { id = result.Id }, result);
         }
@@ -92,7 +90,7 @@ namespace ECommerce.API.Controllers
 
             var success = await _productService.UpdateProductAsync(id, request, cancellationToken);
             if (!success) return NotFound();
-            
+
             return NoContent();
         }
 

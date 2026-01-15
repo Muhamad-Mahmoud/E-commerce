@@ -1,5 +1,3 @@
-using ECommerce.Domain.Entities;
-
 namespace ECommerce.Application.Interfaces.Services.Auth
 {
     /// <summary>

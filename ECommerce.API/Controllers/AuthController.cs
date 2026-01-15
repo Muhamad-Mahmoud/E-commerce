@@ -1,11 +1,9 @@
-using ECommerce.Application.DTO.Auth;
-using ECommerce.Application.DTO.Categories;
-using ECommerce.Application.DTO.Products;
-using ECommerce.Application.DTO.Pagination;
+using System.Security.Claims;
+using ECommerce.Application.DTO.Auth.Requests;
+using ECommerce.Application.DTO.Auth.Responses;
 using ECommerce.Application.Interfaces.Services.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ECommerce.API.Controllers
 {
@@ -78,7 +76,7 @@ namespace ECommerce.API.Controllers
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             if (string.IsNullOrEmpty(request.Token))
-                return BadRequest(new AuthenticationResult
+                return BadRequest(new AuthenticationResponse
                 {
                     Success = false,
                     Errors = new List<string> { "Refresh token is required" }

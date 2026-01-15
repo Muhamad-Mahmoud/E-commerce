@@ -1,7 +1,7 @@
 using ECommerce.API.Extensions;
 using ECommerce.API.Middleware;
-using ECommerce.Infrastructure.DependencyInjection;
 using ECommerce.Application.DependencyInjection;
+using ECommerce.Infrastructure.DependencyInjection;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -72,12 +72,12 @@ try
             var context = services.GetRequiredService<ECommerce.Infrastructure.Persistence.AppDbContext>();
             var userManager = services.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ECommerce.Infrastructure.Identity.ApplicationUser>>();
             var roleManager = services.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole>>();
-            
+
             var logger = services.GetRequiredService<ILogger<Program>>();
             logger.LogInformation("Starting Database Seeding...");
-            
+
             await ECommerce.Infrastructure.Persistence.DbInitializer.SeedAsync(userManager, roleManager, context);
-            
+
             logger.LogInformation("Database Seeding Completed Successfully.");
         }
         catch (Exception ex)

@@ -1,11 +1,10 @@
 using AutoMapper;
-using ECommerce.Application.DTO.Auth;
-using ECommerce.Application.DTO.Categories;
-using ECommerce.Application.DTO.Products;
 using ECommerce.Application.DTO.Pagination;
-using ECommerce.Application.Interfaces.Services.Products;
-using ECommerce.Domain.Interfaces;
+using ECommerce.Application.DTO.Products.Requests;
+using ECommerce.Application.DTO.Products.Responses;
+using ECommerce.Application.Interfaces.Services;
 using ECommerce.Domain.Entities;
+using ECommerce.Domain.Interfaces;
 
 namespace ECommerce.Application.Services
 {
@@ -20,16 +19,16 @@ namespace ECommerce.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<PagedResult<ProductDto>> GetProductsAsync(ProductParams productParams)
+        public async Task<PagedResult<ProductResponse>> GetProductsAsync(ProductParams productParams)
         {
             return await _unitOfWork.Products.SearchProductsAsync(productParams);
         }
 
-        public async Task<ProductDetailsDto?> GetProductByIdAsync(int id)
+        public async Task<ProductDetailsResponse?> GetProductByIdAsync(int id)
         {
             var product = await _unitOfWork.Products.GetWithFullDetailsAsync(id);
             if (product == null) return null;
-            return _mapper.Map<ProductDetailsDto>(product);
+            return _mapper.Map<ProductDetailsResponse>(product);
         }
 
         public async Task<bool> UpdateProductAsync(int id, UpdateProductRequest request, CancellationToken cancellationToken)
@@ -40,7 +39,7 @@ namespace ECommerce.Application.Services
                 id,
                 p => p.Category
             );
-            
+
             if (product == null) return false;
 
             // Validate Category
@@ -48,20 +47,20 @@ namespace ECommerce.Application.Services
                 throw new ArgumentException("Invalid Category ID");
 
             _mapper.Map(request, product);
-            
+
             _unitOfWork.Products.Update(product);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return true;
         }
 
-        public async Task<ProductDto> CreateProductAsync(CreateProductRequest request, CancellationToken cancellationToken)
+        public async Task<ProductResponse> CreateProductAsync(CreateProductRequest request, CancellationToken cancellationToken)
         {
             // Validate Category
             if (!await _unitOfWork.Categories.ExistsAsync(request.CategoryId))
                 throw new ArgumentException("Invalid Category ID");
 
             var product = _mapper.Map<Product>(request);
-            
+
             await _unitOfWork.Products.AddAsync(product);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -71,8 +70,8 @@ namespace ECommerce.Application.Services
                 p => p.Category,
                 p => p.Variants
             );
-            
-            return _mapper.Map<ProductDto>(createdProduct ?? product);
+
+            return _mapper.Map<ProductResponse>(createdProduct ?? product);
         }
 
         public async Task<bool> DeleteProductAsync(int id, CancellationToken cancellationToken)

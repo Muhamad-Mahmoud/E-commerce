@@ -1,5 +1,5 @@
-using ECommerce.Application.DTO.Products;
 using ECommerce.Application.DTO.Pagination;
+using ECommerce.Application.DTO.Products.Responses;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Interfaces.Repositories;
 
@@ -23,7 +23,7 @@ namespace ECommerce.Application.Interfaces.Repositories
         /// <summary>
         /// Searches products with filtering (price, category, search term) and pagination.
         /// </summary>
-        Task<PagedResult<ProductDto>> SearchProductsAsync(ProductParams productParams);
+        Task<PagedResult<ProductResponse>> SearchProductsAsync(ProductParams productParams);
 
         /// <summary>
         /// Gets all published products with their variants.

@@ -1,5 +1,5 @@
-using ECommerce.Application.DTO.Products;
 using ECommerce.Application.DTO.Pagination;
+using ECommerce.Application.DTO.Products.Responses;
 using ECommerce.Application.Interfaces.Repositories;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Enums;
@@ -21,10 +21,10 @@ namespace ECommerce.Infrastructure.Repositories
 
         public async Task<Product?> GetWithFullDetailsAsync(int id)
         {
-            return await GetByIdAsync(id, 
+            return await GetByIdAsync(id,
                 p => p.Category,
-                p => p.Variants, 
-                p => p.Images, 
+                p => p.Variants,
+                p => p.Images,
                 p => p.Reviews);
         }
 
@@ -41,7 +41,7 @@ namespace ECommerce.Infrastructure.Repositories
         /// <summary>
         /// Searches for products with pagination, filtering, and sorting.
         /// </summary>
-        public async Task<PagedResult<ProductDto>> SearchProductsAsync(ProductParams p)
+        public async Task<PagedResult<ProductResponse>> SearchProductsAsync(ProductParams p)
         {
             var query = _context.Products
                 .AsNoTracking()
@@ -51,7 +51,7 @@ namespace ECommerce.Infrastructure.Repositories
             if (!string.IsNullOrEmpty(p.Search))
             {
                 var lowerTerm = p.Search.ToLower();
-                query = query.Where(x => x.Name.ToLower().Contains(lowerTerm) || 
+                query = query.Where(x => x.Name.ToLower().Contains(lowerTerm) ||
                                        (x.Description != null && x.Description.ToLower().Contains(lowerTerm)));
             }
 
@@ -87,7 +87,7 @@ namespace ECommerce.Infrastructure.Repositories
             var items = await query
                 .Skip((p.PageNumber - 1) * p.PageSize)
                 .Take(p.PageSize)
-                .Select(pr => new ProductDto
+                .Select(pr => new ProductResponse
                 {
                     Id = pr.Id,
                     Name = pr.Name,
@@ -96,13 +96,13 @@ namespace ECommerce.Infrastructure.Repositories
                     // Get minimum price from variants
                     Price = pr.Variants.Any() ? pr.Variants.Min(v => v.Price) : 0,
                     // Get Primary Image, or first image, or null
-                    MainImageUrl = pr.Images.Any(i => i.IsPrimary) 
-                        ? pr.Images.FirstOrDefault(i => i.IsPrimary)!.ImageUrl 
+                    MainImageUrl = pr.Images.Any(i => i.IsPrimary)
+                        ? pr.Images.FirstOrDefault(i => i.IsPrimary)!.ImageUrl
                         : (pr.Images.Any() ? pr.Images.FirstOrDefault()!.ImageUrl : null)
                 })
                 .ToListAsync();
 
-            return new PagedResult<ProductDto>
+            return new PagedResult<ProductResponse>
             {
                 Items = items,
                 TotalCount = totalCount,

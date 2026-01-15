@@ -1,3 +1,4 @@
+using ECommerce.Application.DTO.Pagination;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Enums;
 
@@ -37,5 +38,10 @@ namespace ECommerce.Domain.Interfaces.Repositories
         /// Checks if an order with the given order number exists.
         /// </summary>
         Task<bool> OrderNumberExistsAsync(string orderNumber);
+
+        /// <summary>
+        /// Searches for orders with pagination, filtering, and sorting.
+        /// </summary>
+        Task<PagedResult<Order>> SearchOrdersAsync(OrderParams orderParams, string? userId = null);
     }
 }

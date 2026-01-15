@@ -1,3 +1,4 @@
+using ECommerce.Application.DTO.Pagination;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Enums;
 using ECommerce.Domain.Interfaces.Repositories;
@@ -14,41 +15,40 @@ namespace ECommerce.Infrastructure.Repositories
 
         public async Task<Order?> GetByIdWithDetailsAsync(int id)
         {
-            return await GetByIdAsync(id,
-                o => o.OrderItems,
-                o => o.PaymentTransactions);
+            return await ApplyDefaultIncludes(_context.Orders)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.Id == id);
         }
 
         public async Task<Order?> GetByOrderNumberAsync(string orderNumber)
         {
-            return await GetFirstAsync(
-                o => o.OrderNumber == orderNumber,
-                o => o.OrderItems,
-                o => o.PaymentTransactions);
+            return await ApplyDefaultIncludes(_context.Orders)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber);
         }
 
         public async Task<IEnumerable<Order>> GetUserOrdersAsync(string userId)
         {
-            return await FindAsync(
-                o => o.UserId == userId,
-                o => o.OrderItems,
-                o => o.PaymentTransactions);
+            return await ApplyDefaultIncludes(_context.Orders)
+                .AsNoTracking()
+                .Where(o => o.UserId == userId)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<Order>> GetOrdersByStatusAsync(OrderStatus status)
         {
-            return await FindAsync(
-                o => o.Status == status,
-                o => o.OrderItems,
-                o => o.PaymentTransactions);
+            return await ApplyDefaultIncludes(_context.Orders)
+                .AsNoTracking()
+                .Where(o => o.Status == status)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<Order>> GetRecentOrdersAsync(int count)
         {
-            return await _context.Orders
+            return await ApplyDefaultIncludes(_context.Orders)
                 .AsNoTracking()
-                .Include(o => o.OrderItems)
-                .Include(o => o.PaymentTransactions)
                 .OrderByDescending(o => o.CreatedAt)
                 .Take(count)
                 .ToListAsync();
@@ -59,6 +59,95 @@ namespace ECommerce.Infrastructure.Repositories
             return await _context.Orders
                 .AsNoTracking()
                 .AnyAsync(o => o.OrderNumber == orderNumber);
+        }
+
+        public async Task<PagedResult<Order>> SearchOrdersAsync(OrderParams p, string? userId = null)
+        {
+            var query = ApplyDefaultIncludes(_context.Orders)
+                .AsNoTracking()
+                .AsQueryable();
+
+            // Filter by user if specified
+            if (!string.IsNullOrEmpty(userId))
+            {
+                query = query.Where(o => o.UserId == userId);
+            }
+
+            // Search by order number
+            if (!string.IsNullOrEmpty(p.Search))
+            {
+                var searchTerm = p.Search.ToLower();
+                query = query.Where(o => o.OrderNumber.ToLower().Contains(searchTerm));
+            }
+
+            // Filter by status
+            if (p.Status.HasValue)
+            {
+                query = query.Where(o => o.Status == p.Status.Value);
+            }
+
+            // Filter by payment status
+            if (p.PaymentStatus.HasValue)
+            {
+                query = query.Where(o => o.PaymentStatus == p.PaymentStatus.Value);
+            }
+
+            // Filter by date range
+            if (p.FromDate.HasValue)
+            {
+                query = query.Where(o => o.CreatedAt >= p.FromDate.Value);
+            }
+
+            if (p.ToDate.HasValue)
+            {
+                query = query.Where(o => o.CreatedAt <= p.ToDate.Value);
+            }
+
+            // Filter by amount range
+            if (p.MinAmount.HasValue)
+            {
+                query = query.Where(o => o.TotalAmount >= p.MinAmount.Value);
+            }
+
+            if (p.MaxAmount.HasValue)
+            {
+                query = query.Where(o => o.TotalAmount <= p.MaxAmount.Value);
+            }
+
+            // Sorting
+            query = p.Sort switch
+            {
+                OrderParams.SortDateAsc => query.OrderBy(o => o.CreatedAt),
+                OrderParams.SortDateDesc => query.OrderByDescending(o => o.CreatedAt),
+                OrderParams.SortAmountAsc => query.OrderBy(o => o.TotalAmount),
+                OrderParams.SortAmountDesc => query.OrderByDescending(o => o.TotalAmount),
+                _ => query.OrderByDescending(o => o.CreatedAt)
+            };
+
+            // Get total count (before pagination)
+            var totalCount = await query.CountAsync();
+
+            // Pagination - Include BEFORE Skip/Take (domain-centric)
+            var items = await query
+                .Skip((p.PageNumber - 1) * p.PageSize)
+                .Take(p.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<Order>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = p.PageNumber,
+                PageSize = p.PageSize
+            };
+        }
+
+        private IQueryable<Order> ApplyDefaultIncludes(IQueryable<Order> query)
+        {
+            return query
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.ProductVariant)
+                .Include(o => o.PaymentTransactions);
         }
     }
 }

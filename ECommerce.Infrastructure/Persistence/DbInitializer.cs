@@ -1,6 +1,6 @@
 using ECommerce.Domain.Entities;
-using ECommerce.Infrastructure.Identity;
 using ECommerce.Domain.Enums;
+using ECommerce.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -68,13 +68,13 @@ namespace ECommerce.Infrastructure.Persistence
             // Categories
             var electronics = new Category { Name = "Electronics", ImageUrl = "https://placehold.co/600x400?text=Electronics" };
             var fashion = new Category { Name = "Fashion", ImageUrl = "https://placehold.co/600x400?text=Fashion" };
-            
+
             await context.Categories.AddRangeAsync(electronics, fashion);
             await context.SaveChangesAsync();
 
             var laptops = new Category { Name = "Laptops", ParentCategoryId = electronics.Id, ImageUrl = "https://placehold.co/600x400?text=Laptops" };
             var smartphones = new Category { Name = "Smartphones", ParentCategoryId = electronics.Id, ImageUrl = "https://placehold.co/600x400?text=Smartphones" };
-            
+
             await context.Categories.AddRangeAsync(laptops, smartphones);
             await context.SaveChangesAsync();
 

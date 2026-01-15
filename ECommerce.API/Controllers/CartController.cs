@@ -1,8 +1,8 @@
-using ECommerce.Application.DTO.Cart;
-using ECommerce.Application.Interfaces.Services.Cart;
+using System.Security.Claims;
+using ECommerce.Application.DTO.Cart.Requests;
+using ECommerce.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ECommerce.API.Controllers
 {
@@ -50,7 +50,7 @@ namespace ECommerce.API.Controllers
         /// <response code="401">Unauthorized - User not authenticated.</response>
         /// <response code="404">Product variant not found.</response>
         [HttpPost]
-        public async Task<IActionResult> AddItem([FromBody] AddToCartDto dto)
+        public async Task<IActionResult> AddItem([FromBody] AddToCartRequest dto)
         {
             var userId = GetUserId();
             var cart = await _shoppingCartService.AddItemAsync(userId, dto);
@@ -67,7 +67,7 @@ namespace ECommerce.API.Controllers
         /// <response code="401">Unauthorized - User not authenticated.</response>
         /// <response code="404">Cart item not found.</response>
         [HttpPut]
-        public async Task<IActionResult> UpdateItem([FromBody] UpdateCartItemDto dto)
+        public async Task<IActionResult> UpdateItem([FromBody] UpdateCartItemRequest dto)
         {
             var userId = GetUserId();
             var cart = await _shoppingCartService.UpdateItemAsync(userId, dto);

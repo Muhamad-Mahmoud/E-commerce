@@ -1,19 +1,22 @@
 namespace ECommerce.Application.DTO.Pagination
 {
-    /// <summary>
-    /// Generic pagination parameters for list queries.
-    /// </summary>
     public class PaginationParams
     {
         private const int MaxPageSize = 50;
+        private const int MinPageSize = 1;
+        private int _pageNumber = 1;
         private int _pageSize = 10;
 
-        public int PageNumber { get; set; } = 1;
+        public int PageNumber
+        {
+            get => _pageNumber;
+            set => _pageNumber = value < 1 ? 1 : value;
+        }
 
         public int PageSize
         {
             get => _pageSize;
-            set => _pageSize = value > MaxPageSize ? MaxPageSize : value;
+            set => _pageSize = value < MinPageSize ? MinPageSize : (value > MaxPageSize ? MaxPageSize : value);
         }
     }
 }

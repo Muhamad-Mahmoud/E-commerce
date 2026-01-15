@@ -40,8 +40,8 @@ namespace ECommerce.API.Middleware
 
                 var response = _env.IsDevelopment()
                     ? new ApiErrorResponse(context.Response.StatusCode, ex.Message, ex.StackTrace)
-                    : new ApiErrorResponse(context.Response.StatusCode, 
-                        context.Response.StatusCode == 500 ? "Internal Server Error" : ex.Message, 
+                    : new ApiErrorResponse(context.Response.StatusCode,
+                        context.Response.StatusCode == 500 ? "Internal Server Error" : ex.Message,
                         null);
 
                 var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
