@@ -164,6 +164,7 @@ namespace ECommerce.API.Controllers
             }
         }
 
+
         /// <summary>
         /// Extracts the user ID from the current claims.
         /// </summary>

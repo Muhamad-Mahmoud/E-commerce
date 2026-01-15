@@ -1,24 +1,29 @@
 using ECommerce.Application.Interfaces.Repositories;
-using ECommerce.Domain.Interfaces;
+using ECommerce.Application.Interfaces;
 using ECommerce.Domain.Interfaces.Repositories;
 using ECommerce.Infrastructure.Persistence;
 using ECommerce.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore.Storage;
+using ECommerce.Domain.Interfaces;
 
 namespace ECommerce.Infrastructure.UnitOfWork
 {
-
-    public class unitOfWork(AppDbContext context) : IUnitOfWork
+    public class unitOfWork : IUnitOfWork
     {
-        private readonly AppDbContext _context = context;
+        private readonly AppDbContext _context;
         private IDbContextTransaction? _transaction;
 
         private ICategoryRepository? _categories;
         private IProductRepository? _products;
         private IOrderRepository? _orders;
         private IRefreshTokenRepository? _refreshTokens;
+        private IShoppingCartRepository? _shoppingCarts;
+        private IProductVariantRepository? _productVariants;
 
-        //  Repositories
+        public unitOfWork(AppDbContext context)
+        {
+            _context = context;
+        }
 
         public ICategoryRepository Categories
             => _categories ??= new CategoryRepository(_context);
@@ -32,11 +37,11 @@ namespace ECommerce.Infrastructure.UnitOfWork
         public IRefreshTokenRepository RefreshTokens
             => _refreshTokens ??= new RefreshTokenRepository(_context);
 
-        private IShoppingCartRepository? _shoppingCarts;
         public IShoppingCartRepository ShoppingCarts
             => _shoppingCarts ??= new ShoppingCartRepository(_context);
 
-        //  Transaction Management 
+        public IProductVariantRepository ProductVariants
+            => _productVariants ??= new ProductVariantRepository(_context);
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -46,7 +51,7 @@ namespace ECommerce.Infrastructure.UnitOfWork
         public async Task BeginTransactionAsync()
         {
             if (_transaction != null)
-                return; // Transaction already started
+                return;
 
             _transaction = await _context.Database.BeginTransactionAsync();
         }
@@ -68,15 +73,18 @@ namespace ECommerce.Infrastructure.UnitOfWork
             }
             finally
             {
-                await _transaction.DisposeAsync();
-                _transaction = null;
+                if (_transaction != null)
+                {
+                    await _transaction.DisposeAsync();
+                    _transaction = null;
+                }
             }
         }
 
         public async Task RollbackTransactionAsync()
         {
             if (_transaction == null)
-                return; // Nothing to rollback
+                return;
 
             try
             {
@@ -89,11 +97,22 @@ namespace ECommerce.Infrastructure.UnitOfWork
             }
         }
 
-        //  Dispose 
         public void Dispose()
         {
             _transaction?.Dispose();
             _context.Dispose();
+            GC.SuppressFinalize(this);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (_transaction != null)
+            {
+                await _transaction.DisposeAsync();
+                _transaction = null;
+            }
+            await _context.DisposeAsync();
+            GC.SuppressFinalize(this);
         }
     }
 }

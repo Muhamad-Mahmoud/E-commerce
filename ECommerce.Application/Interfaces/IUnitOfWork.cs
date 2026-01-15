@@ -6,7 +6,7 @@ namespace ECommerce.Domain.Interfaces
     /// <summary>
     /// Unit of Work pattern for managing transactions and coordinating repositories.
     /// </summary>
-    public interface IUnitOfWork : IDisposable
+    public interface IUnitOfWork : IDisposable, IAsyncDisposable
     {
         /// <summary>
         /// Gets the category repository for accessing category data.
@@ -32,6 +32,11 @@ namespace ECommerce.Domain.Interfaces
         /// Gets the shopping cart repository for accessing shopping cart data.
         /// </summary>
         IShoppingCartRepository ShoppingCarts { get; }
+
+        /// <summary>
+        /// Gets the product variant repository for managing stock and variant data.
+        /// </summary>
+        IProductVariantRepository ProductVariants { get; }
 
         /// <summary>
         /// Saves all pending changes to the database.

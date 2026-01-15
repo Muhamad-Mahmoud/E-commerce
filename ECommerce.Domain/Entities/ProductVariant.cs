@@ -13,6 +13,25 @@
         public string? Size { get; set; }
         public bool IsActive { get; set; }
 
+        public void DeductStock(int quantity)
+        {
+            if (quantity <= 0)
+                throw new ArgumentException("Quantity to deduct must be greater than zero.");
+
+            if (StockQuantity < quantity)
+                throw new InvalidOperationException($"Insufficient stock. Available: {StockQuantity}, Requested: {quantity}");
+
+            StockQuantity -= quantity;
+        }
+
+        public void RestoreStock(int quantity)
+        {
+            if (quantity <= 0)
+                throw new ArgumentException("Quantity to restore must be greater than zero.");
+
+            StockQuantity += quantity;
+        }
+
         public ICollection<ProductVariantImage> Images { get; set; }
         public ICollection<ShoppingCartItem> CartItems { get; set; }
         public ICollection<OrderItem> OrderItems { get; set; }

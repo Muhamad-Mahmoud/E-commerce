@@ -9,6 +9,7 @@ using ECommerce.Infrastructure.Persistence;
 using ECommerce.Infrastructure.Services.Auth;
 using ECommerce.Infrastructure.Services;
 using ECommerce.Infrastructure.UnitOfWork;
+using ECommerce.Infrastructure.Payment;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -33,8 +34,11 @@ namespace ECommerce.Infrastructure.DependencyInjection
                 .AddEntityFrameworkStores<AppDbContext>()
                 .AddDefaultTokenProviders();
 
-            // configuration Authentication & JWT
-            services.Configure<JWT>(configuration.GetSection("JwtSettings"));
+			// Stripe Configuration 
+			services.Configure<StripeSettings>(configuration.GetSection("Stripe"));
+
+			// configuration Authentication & JWT
+			services.Configure<JWT>(configuration.GetSection("JwtSettings"));
 
             // Map to object directly for configuring AddJwtBearer immediately
             var jwtOptions = configuration.GetSection("JwtSettings").Get<JWT>();
@@ -72,6 +76,7 @@ namespace ECommerce.Infrastructure.DependencyInjection
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IShoppingCartService, ShoppingCartService>();
             services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<IPaymentService, StripePaymentService>();
 
             //  Configure Identity Options
             services.ConfigureIdentity();
