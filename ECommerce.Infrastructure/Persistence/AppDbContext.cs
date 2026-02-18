@@ -30,6 +30,8 @@ namespace ECommerce.Infrastructure.Persistence
         public DbSet<Review> Reviews { get; set; }
         public DbSet<ShoppingCart> ShoppingCarts { get; set; }
         public DbSet<ShoppingCartItem> ShoppingCartItems { get; set; }
+        public DbSet<Wishlist> Wishlists { get; set; }
+        public DbSet<WishlistItem> WishlistItems { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

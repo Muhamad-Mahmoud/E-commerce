@@ -38,16 +38,12 @@ namespace ECommerce.Infrastructure.Repositories
             return await FindAsync(p => p.CategoryId == categoryId, p => p.Variants);
         }
 
-        /// <summary>
-        /// Searches for products with pagination, filtering, and sorting.
-        /// </summary>
         public async Task<PagedResult<ProductResponse>> SearchProductsAsync(ProductParams p)
         {
             var query = _context.Products
                 .AsNoTracking()
                 .AsQueryable();
 
-            // Filtering
             if (!string.IsNullOrEmpty(p.Search))
             {
                 var lowerTerm = p.Search.ToLower();
@@ -60,7 +56,6 @@ namespace ECommerce.Infrastructure.Repositories
                 query = query.Where(x => x.CategoryId == p.CategoryId);
             }
 
-            // Price filtering using Min Variant Price
             if (p.MinPrice.HasValue)
             {
                 query = query.Where(x => x.Variants.Min(v => v.Price) >= p.MinPrice);
@@ -71,7 +66,6 @@ namespace ECommerce.Infrastructure.Repositories
                 query = query.Where(x => x.Variants.Min(v => v.Price) <= p.MaxPrice);
             }
 
-            //  Sorting
             query = p.Sort switch
             {
                 ProductParams.SortPriceAsc => query.OrderBy(x => x.Variants.Min(v => v.Price)),
@@ -80,10 +74,8 @@ namespace ECommerce.Infrastructure.Repositories
                 _ => query.OrderBy(x => x.Name)
             };
 
-            // Pagination & Count
             var totalCount = await query.CountAsync();
 
-            //  Projection to DTO
             var items = await query
                 .Skip((p.PageNumber - 1) * p.PageSize)
                 .Take(p.PageSize)
@@ -93,9 +85,7 @@ namespace ECommerce.Infrastructure.Repositories
                     Name = pr.Name,
                     Description = pr.Description,
                     CategoryName = pr.Category != null ? pr.Category.Name : null,
-                    // Get minimum price from variants
                     Price = pr.Variants.Any() ? pr.Variants.Min(v => v.Price) : 0,
-                    // Get Primary Image, or first image, or null
                     MainImageUrl = pr.Images.Any(i => i.IsPrimary)
                         ? pr.Images.FirstOrDefault(i => i.IsPrimary)!.ImageUrl
                         : (pr.Images.Any() ? pr.Images.FirstOrDefault()!.ImageUrl : null)

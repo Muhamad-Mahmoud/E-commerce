@@ -3,19 +3,13 @@ using Microsoft.OpenApi.Models;
 
 namespace ECommerce.API.Extensions
 {
-    public static class ApplicationServiceExtensions
+    public static class ApiServiceExtensions
     {
         public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration config)
         {
-            // Controllers
             services.AddControllers();
-
-            // Swagger Configuration
             services.AddSwaggerDocumentation();
-
-            // CORS Configuration
             services.AddCorsPolicy();
-
             return services;
         }
 
@@ -31,13 +25,11 @@ namespace ECommerce.API.Extensions
                     Description = "E-Commerce Application API"
                 });
 
-                // Add XML comments from Application project
                 var applicationXmlFile = $"{Assembly.Load("ECommerce.Application").GetName().Name}.xml";
                 var applicationXmlPath = Path.Combine(AppContext.BaseDirectory, applicationXmlFile);
                 if (File.Exists(applicationXmlPath))
                     options.IncludeXmlComments(applicationXmlPath);
 
-                // Add XML comments from API project
                 var apiXmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var apiXmlPath = Path.Combine(AppContext.BaseDirectory, apiXmlFile);
                 if (File.Exists(apiXmlPath))
@@ -58,11 +50,7 @@ namespace ECommerce.API.Extensions
                     {
                         new OpenApiSecurityScheme
                         {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
                         },
                         Array.Empty<string>()
                     }
@@ -86,6 +74,5 @@ namespace ECommerce.API.Extensions
 
             return services;
         }
-
     }
 }

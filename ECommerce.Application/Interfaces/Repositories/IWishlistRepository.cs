@@ -3,8 +3,8 @@ using ECommerce.Domain.Interfaces.Repositories;
 
 namespace ECommerce.Application.Interfaces.Repositories
 {
-    public interface IProductVariantRepository : IRepository<ProductVariant>
+    public interface IWishlistRepository : IRepository<Wishlist>
     {
-        Task<ProductVariant?> GetBySKUAsync(string sku);
+        Task<Wishlist?> GetWishlistByUserIdAsync(string userId);
     }
 }

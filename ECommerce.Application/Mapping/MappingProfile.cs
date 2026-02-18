@@ -7,6 +7,7 @@ using ECommerce.Application.DTO.Categories.Responses;
 using ECommerce.Application.DTO.Orders.Responses;
 using ECommerce.Application.DTO.Products.Requests;
 using ECommerce.Application.DTO.Products.Responses;
+using ECommerce.Application.DTO.Wishlist;
 using ECommerce.Domain.Entities;
 
 namespace ECommerce.Application.Mapping
@@ -65,6 +66,14 @@ namespace ECommerce.Application.Mapping
             CreateMap<Order, OrderResponse>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => src.PaymentStatus.ToString()));
+
+            // Wishlist Mappings
+            CreateMap<WishlistItem, WishlistItemDto>()
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Product.Variants.Any() ? src.Product.Variants.Min(v => v.Price) : 0))
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Product.Images.Any(i => i.IsPrimary) ? src.Product.Images.First(i => i.IsPrimary).ImageUrl : (src.Product.Images.Any() ? src.Product.Images.First().ImageUrl : null)));
+
+            CreateMap<Wishlist, WishlistDto>();
         }
     }
 }

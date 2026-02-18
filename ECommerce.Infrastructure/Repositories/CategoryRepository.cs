@@ -23,7 +23,6 @@ namespace ECommerce.Infrastructure.Repositories
             var query = _context.Categories
                 .AsNoTracking();
 
-            //  Filtering
             if (!string.IsNullOrEmpty(p.Search))
             {
                 var lowerTerm = p.Search.ToLower();
@@ -39,7 +38,6 @@ namespace ECommerce.Infrastructure.Repositories
                 query = query.Where(c => c.ParentCategoryId == null);
             }
 
-            // Sorting
             query = query.OrderBy(c => c.ParentCategoryId)
                         .ThenBy(c => c.Name);
 

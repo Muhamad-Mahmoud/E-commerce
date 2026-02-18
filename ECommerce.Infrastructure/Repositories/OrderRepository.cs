@@ -67,32 +67,27 @@ namespace ECommerce.Infrastructure.Repositories
                 .AsNoTracking()
                 .AsQueryable();
 
-            // Filter by user if specified
             if (!string.IsNullOrEmpty(userId))
             {
                 query = query.Where(o => o.UserId == userId);
             }
 
-            // Search by order number
             if (!string.IsNullOrEmpty(p.Search))
             {
                 var searchTerm = p.Search.ToLower();
                 query = query.Where(o => o.OrderNumber.ToLower().Contains(searchTerm));
             }
 
-            // Filter by status
             if (p.Status.HasValue)
             {
                 query = query.Where(o => o.Status == p.Status.Value);
             }
 
-            // Filter by payment status
             if (p.PaymentStatus.HasValue)
             {
                 query = query.Where(o => o.PaymentStatus == p.PaymentStatus.Value);
             }
 
-            // Filter by date range
             if (p.FromDate.HasValue)
             {
                 query = query.Where(o => o.CreatedAt >= p.FromDate.Value);
@@ -103,7 +98,6 @@ namespace ECommerce.Infrastructure.Repositories
                 query = query.Where(o => o.CreatedAt <= p.ToDate.Value);
             }
 
-            // Filter by amount range
             if (p.MinAmount.HasValue)
             {
                 query = query.Where(o => o.TotalAmount >= p.MinAmount.Value);
@@ -114,7 +108,6 @@ namespace ECommerce.Infrastructure.Repositories
                 query = query.Where(o => o.TotalAmount <= p.MaxAmount.Value);
             }
 
-            // Sorting
             query = p.Sort switch
             {
                 OrderParams.SortDateAsc => query.OrderBy(o => o.CreatedAt),
@@ -124,10 +117,8 @@ namespace ECommerce.Infrastructure.Repositories
                 _ => query.OrderByDescending(o => o.CreatedAt)
             };
 
-            // Get total count (before pagination)
             var totalCount = await query.CountAsync();
 
-            // Pagination - Include BEFORE Skip/Take (domain-centric)
             var items = await query
                 .Skip((p.PageNumber - 1) * p.PageSize)
                 .Take(p.PageSize)

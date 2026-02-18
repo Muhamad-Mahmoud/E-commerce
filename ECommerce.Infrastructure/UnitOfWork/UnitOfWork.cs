@@ -20,6 +20,7 @@ namespace ECommerce.Infrastructure.UnitOfWork
         private IShoppingCartRepository? _shoppingCarts;
         private IProductVariantRepository? _productVariants;
         private IAddressRepository? _addresses;
+        private IWishlistRepository? _wishlists;
 
         public unitOfWork(AppDbContext context)
         {
@@ -46,6 +47,9 @@ namespace ECommerce.Infrastructure.UnitOfWork
 
         public IAddressRepository Addresses
             => _addresses ??= new AddressRepository(_context);
+
+        public IWishlistRepository Wishlists
+            => _wishlists ??= new WishlistRepository(_context);
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
