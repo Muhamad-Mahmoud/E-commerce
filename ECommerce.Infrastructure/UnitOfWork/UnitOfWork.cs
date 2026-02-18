@@ -21,6 +21,7 @@ namespace ECommerce.Infrastructure.UnitOfWork
         private IProductVariantRepository? _productVariants;
         private IAddressRepository? _addresses;
         private IWishlistRepository? _wishlists;
+        private IReviewRepository? _reviews;
 
         public unitOfWork(AppDbContext context)
         {
@@ -50,6 +51,10 @@ namespace ECommerce.Infrastructure.UnitOfWork
 
         public IWishlistRepository Wishlists
             => _wishlists ??= new WishlistRepository(_context);
+
+        public IReviewRepository Reviews
+            => _reviews ??= new ReviewRepository(_context);
+
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

@@ -33,18 +33,24 @@ This project demonstrates how to build a scalable and maintainable backend for a
 * Category management (Admin only)
 * Inventory tracking
 * Product variants (SKU-based)
+* **Product Reviews & Ratings**: Users can leave 1-5 star reviews on products.
+* **Average Ratings**: Automatic calculation of average star ratings.
 
 ### 📋 Orders
 
 * Order creation **directly from the shopping cart**
 * Order history per user
 * Order status lifecycle:
-
   * Pending → Processing → Shipped → Delivered
 * Admin-only order status updates
 * Order search with pagination and filters
 
+### ✨ User Features
+* **Wishlist**: Users can save products for later, manage and clear their wishlist.
+* **Personalized Experience**: Cart and Wishlist persistence per user.
+
 ### 💳 Payments
+
 
 * Stripe Checkout integration (Test Mode)
 * Dedicated Payments API (separated from Orders)
@@ -75,56 +81,8 @@ This project demonstrates how to build a scalable and maintainable backend for a
 
 ---
 
-## 🏗️ Architecture
-
-The project follows **Clean Architecture**, ensuring separation of concerns and testability:
-
-```
-ECommerce.API
-   └── Controllers, Middleware, Filters
-
-ECommerce.Application
-   └── Services, DTOs, Interfaces, Business Logic
-
-ECommerce.Infrastructure
-   └── EF Core, Repositories, External Services (Stripe)
-
-ECommerce.Domain
-   └── Entities, Enums, Core Business Rules
-```
-
----
-
-## 📁 Project Structure
-
-```
-ECommerceSolution/
-├── ECommerce.API
-│   ├── Controllers (Auth, Products, Cart, Orders, Payments)
-│   ├── Middleware
-│   └── Program.cs
-│
-├── ECommerce.Application
-│   ├── Services
-│   ├── DTOs (Requests / Responses)
-│   ├── Interfaces
-│   └── Mapping
-│
-├── ECommerce.Infrastructure
-│   ├── Repositories
-│   ├── Persistence (DbContext, Migrations)
-│   ├── Payment (Stripe)
-│   └── Identity
-│
-└── ECommerce.Domain
-    ├── Entities
-    ├── Enums
-    └── Interfaces
-```
-
----
-
 ## ▶️ Getting Started
+
 
 ### Prerequisites
 
@@ -187,7 +145,11 @@ POST /api/auth/login
 * `POST /api/orders` → Create order from cart
 * `POST /api/payments/checkout` → Start Stripe checkout
 * `GET /api/orders` → User order history
+* `POST /api/reviews` → Add product review
+* `GET /api/reviews/product/{id}` → Get product reviews
+* `GET /api/wishlist` → Get user wishlist
 * `PUT /api/orders/{id}/status` → Admin order updates
+
 
 Full documentation available via Swagger.
 

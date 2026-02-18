@@ -19,6 +19,8 @@ namespace ECommerce.Application.DependencyInjection
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<IAddressService, AddressService>();
             services.AddScoped<IWishlistService, WishlistService>();
+            services.AddScoped<IReviewService, ReviewService>();
+
 
             return services;
         }

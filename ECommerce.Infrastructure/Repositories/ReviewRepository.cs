@@ -1,0 +1,38 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using ECommerce.Domain.Interfaces.Repositories;
+using ECommerce.Domain.Entities;
+using ECommerce.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
+namespace ECommerce.Infrastructure.Repositories
+{
+    public class ReviewRepository : Repository<Review>, IReviewRepository
+
+    {
+        public ReviewRepository(AppDbContext context) : base(context)
+        {
+        }
+
+        public async Task<IEnumerable<Review>> GetProductReviewsAsync(int productId)
+        {
+            return await _context.Reviews
+                .Where(r => r.ProductId == productId && r.IsApproved)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<double> GetAverageRatingAsync(int productId)
+        {
+            var ratings = await _context.Reviews
+                .Where(r => r.ProductId == productId && r.IsApproved)
+                .Select(r => r.Rating)
+                .ToListAsync();
+
+            if (ratings.Count == 0) return 0;
+
+            return ratings.Average();
+        }
+    }
+}

@@ -13,7 +13,9 @@ namespace ECommerce.Domain.Interfaces
         IProductVariantRepository ProductVariants { get; }
         IAddressRepository Addresses { get; }
         IWishlistRepository Wishlists { get; }
+        IReviewRepository Reviews { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
         Task BeginTransactionAsync();
         Task CommitTransactionAsync();
         Task RollbackTransactionAsync();

@@ -7,6 +7,7 @@ using ECommerce.Application.DTO.Categories.Responses;
 using ECommerce.Application.DTO.Orders.Responses;
 using ECommerce.Application.DTO.Products.Requests;
 using ECommerce.Application.DTO.Products.Responses;
+using ECommerce.Application.DTO.Reviews;
 using ECommerce.Application.DTO.Wishlist;
 using ECommerce.Domain.Entities;
 
@@ -74,6 +75,10 @@ namespace ECommerce.Application.Mapping
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Product.Images.Any(i => i.IsPrimary) ? src.Product.Images.First(i => i.IsPrimary).ImageUrl : (src.Product.Images.Any() ? src.Product.Images.First().ImageUrl : null)));
 
             CreateMap<Wishlist, WishlistDto>();
+
+            // Review Mappings
+            CreateMap<Review, ReviewDto>();
         }
+
     }
 }
