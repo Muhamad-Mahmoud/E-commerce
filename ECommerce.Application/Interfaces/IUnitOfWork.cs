@@ -39,6 +39,11 @@ namespace ECommerce.Domain.Interfaces
         IProductVariantRepository ProductVariants { get; }
 
         /// <summary>
+        /// Gets the address repository for managing user addresses.
+        /// </summary>
+        IAddressRepository Addresses { get; }
+
+        /// <summary>
         /// Saves all pending changes to the database.
         /// </summary>
         /// <param name="cancellationToken">The cancellation token for the operation.</param>

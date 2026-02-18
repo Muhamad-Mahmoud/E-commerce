@@ -33,6 +33,7 @@ namespace ECommerce.API.Middleware
                 context.Response.StatusCode = ex switch
                 {
                     ArgumentException => (int)HttpStatusCode.BadRequest,        // 400
+                    InvalidOperationException => (int)HttpStatusCode.BadRequest, // 400
                     KeyNotFoundException => (int)HttpStatusCode.NotFound,       // 404
                     UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized, // 401
                     _ => (int)HttpStatusCode.InternalServerError                // 500

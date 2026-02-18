@@ -1,4 +1,6 @@
 using AutoMapper;
+using ECommerce.Application.DTO.Addresses.Requests;
+using ECommerce.Application.DTO.Addresses.Responses;
 using ECommerce.Application.DTO.Cart.Responses;
 using ECommerce.Application.DTO.Categories.Requests;
 using ECommerce.Application.DTO.Categories.Responses;
@@ -13,6 +15,11 @@ namespace ECommerce.Application.Mapping
     {
         public MappingProfile()
         {
+            // Address Mappings
+            CreateMap<Address, AddressDto>();
+            CreateMap<CreateAddressDto, Address>();
+            CreateMap<AddressDto, Address>();
+
             // Category Mappings
             CreateMap<Category, CategoryResponse>()
                 .ForMember(dest => dest.ParentCategoryName, opt => opt.MapFrom(src => src.ParentCategory != null ? src.ParentCategory.Name : null));
