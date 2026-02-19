@@ -51,15 +51,6 @@ namespace ECommerce.API.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
-        /// <summary>
-        /// Logout user.
-        /// </summary>
-        [Authorize]
-        [HttpPost("logout")]
-        public async Task<IActionResult> Logout()
-        {
-            await _authenticationService.LogoutAsync(UserId);
-            return Ok(new { message = "Logged out successfully" });
-        }
+
     }
 }

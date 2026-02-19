@@ -100,10 +100,7 @@ namespace ECommerce.Infrastructure.Services.Auth
             };
         }
 
-        public async Task LogoutAsync(string userId)
-        {
-            await _refreshTokenService.RevokeAllUserTokensAsync(userId);
-        }
+
 
         public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request)
         {
