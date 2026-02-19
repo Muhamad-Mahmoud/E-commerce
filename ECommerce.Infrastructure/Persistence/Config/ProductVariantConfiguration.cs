@@ -17,6 +17,7 @@ namespace ECommerce.Infrastructure.Persistence.Config
             builder.Property(pv => pv.Price).HasPrecision(18, 2);
             builder.Property(pv => pv.Color).HasMaxLength(50);
             builder.Property(pv => pv.Size).HasMaxLength(50);
+            builder.Property(pv => pv.RowVersion).IsRowVersion();
 
             builder.HasOne(pv => pv.Product)
                 .WithMany(p => p.Variants)

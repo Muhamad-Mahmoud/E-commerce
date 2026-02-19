@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Controllers
 {
+    /// <summary>
+    /// Product review management.
+    /// </summary>
     public class ReviewsController : BaseApiController
     {
         private readonly IReviewService _reviewService;
@@ -14,6 +17,9 @@ namespace ECommerce.API.Controllers
             _reviewService = reviewService;
         }
 
+        /// <summary>
+        /// Add a review for a product.
+        /// </summary>
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> AddReview(CreateReviewDto createReviewDto)
@@ -22,6 +28,9 @@ namespace ECommerce.API.Controllers
             return Ok(review);
         }
 
+        /// <summary>
+        /// Get reviews for a specific product.
+        /// </summary>
         [HttpGet("product/{productId}")]
         public async Task<IActionResult> GetProductReviews(int productId)
         {
@@ -29,6 +38,9 @@ namespace ECommerce.API.Controllers
             return Ok(reviews);
         }
 
+        /// <summary>
+        /// Get average rating for a product.
+        /// </summary>
         [HttpGet("product/{productId}/rating")]
         public async Task<IActionResult> GetProductRating(int productId)
         {
@@ -36,6 +48,9 @@ namespace ECommerce.API.Controllers
             return Ok(new { ProductId = productId, AverageRating = rating });
         }
 
+        /// <summary>
+        /// Delete a review.
+        /// </summary>
         [HttpDelete("{reviewId}")]
         [Authorize]
         public async Task<IActionResult> DeleteReview(int reviewId)

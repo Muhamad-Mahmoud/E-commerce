@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ECommerce.API.Controllers
 {
     /// <summary>
-    /// Product management.
+    /// Product catalog management.
     /// </summary>
     public class ProductsController : BaseApiController
     {
@@ -19,56 +19,62 @@ namespace ECommerce.API.Controllers
         }
 
         /// <summary>
-        /// Get paginated products.
+        /// Get paginated list of products with optional filtering.
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetProducts([FromQuery] ProductParams productParams)
         {
-            return Ok(await _productService.GetProductsAsync(productParams));
+            return HandleResult(await _productService.GetProductsAsync(productParams));
         }
 
         /// <summary>
-        /// Get product by id.
+        /// Get product details by ID.
         /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProduct(int id)
         {
-            var product = await _productService.GetProductByIdAsync(id);
-            return product == null ? NotFound() : Ok(product);
+            return HandleResult(await _productService.GetProductByIdAsync(id));
         }
 
         /// <summary>
-        /// Create product (Admin).
+        /// Create a new product (Admin only).
         /// </summary>
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
         {
             var result = await _productService.CreateProductAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetProduct), new { id = result.Id }, result);
+            if (result.IsFailure) return HandleResult(result);
+            
+            return CreatedAtAction(nameof(GetProduct), new { id = result.Value.Id }, result.Value);
         }
 
         /// <summary>
-        /// Update product (Admin).
+        /// Update an existing product (Admin only).
         /// </summary>
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
         {
             if (id != request.Id) return BadRequest("ID mismatch");
-            var success = await _productService.UpdateProductAsync(id, request, cancellationToken);
-            return success ? NoContent() : NotFound();
+            
+            var result = await _productService.UpdateProductAsync(id, request, cancellationToken);
+            if (result.IsFailure) return HandleResult(result);
+
+            return NoContent();
         }
 
         /// <summary>
-        /// Delete product (Admin).
+        /// Delete a product (Admin only).
         /// </summary>
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id, CancellationToken cancellationToken)
         {
-            var success = await _productService.DeleteProductAsync(id, cancellationToken);
-            return success ? NoContent() : NotFound();
+            var result = await _productService.DeleteProductAsync(id, cancellationToken);
+            if (result.IsFailure) return HandleResult(result);
+
+            return NoContent();
         }
     }
 }

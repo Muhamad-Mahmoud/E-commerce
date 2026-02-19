@@ -16,6 +16,7 @@ namespace ECommerce.Infrastructure.Persistence.Config
             builder.Property(o => o.OrderNumber).IsRequired().HasMaxLength(50);
             builder.Property(o => o.TotalAmount).HasPrecision(18, 2);
             builder.Property(o => o.UserId).IsRequired();
+            builder.Property(o => o.RowVersion).IsRowVersion();
 
             builder.HasOne<ApplicationUser>()
                 .WithMany(u => u.Orders)

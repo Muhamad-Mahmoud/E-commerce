@@ -5,8 +5,10 @@ using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Services;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Enums;
+using ECommerce.Domain.Errors;
 using ECommerce.Domain.Exceptions;
 using ECommerce.Domain.Interfaces;
+using ECommerce.Domain.Shared;
 using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Application.Services
@@ -24,16 +26,16 @@ namespace ECommerce.Application.Services
             _logger = logger;
         }
 
-        public async Task<OrderResponse> CreateOrderAsync(string userId)
+        public async Task<Result<OrderResponse>> CreateOrderAsync(string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("UserId is required", nameof(userId));
+                return Result.Failure<OrderResponse>(DomainErrors.User.IdRequired);
 
             var cart = await _unitOfWork.ShoppingCarts.GetByUserIdAsync(userId);
             if (cart == null || !cart.Items.Any())
             {
                 _logger.LogWarning("User {UserId} attempted to create order with empty cart", userId);
-                throw new InvalidOperationException("Shopping cart is empty.");
+                return Result.Failure<OrderResponse>(DomainErrors.Order.EmptyCart);
             }
 
             await _unitOfWork.BeginTransactionAsync();
@@ -60,13 +62,19 @@ namespace ECommerce.Application.Services
                 await _unitOfWork.CommitTransactionAsync();
 
                 _logger.LogInformation("Order {OrderNumber} created for user {UserId}", order.OrderNumber, userId);
-                return _mapper.Map<OrderResponse>(order);
+                return Result.Success(_mapper.Map<OrderResponse>(order));
             }
             catch (InsufficientStockException ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogWarning("Order creation failed due to insufficient stock: {Message}", ex.Message);
-                throw;
+                return Result.Failure<OrderResponse>(DomainErrors.Order.InsufficientStock);
+            }
+            catch (ConcurrencyConflictException ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogWarning(ex, "Concurrency conflict occurred during order creation for user {UserId}", userId);
+                return Result.Failure<OrderResponse>(DomainErrors.Order.ConcurrencyConflict);
             }
             catch (Exception ex)
             {
@@ -76,51 +84,51 @@ namespace ECommerce.Application.Services
             }
         }
 
-        public async Task<OrderResponse> GetOrderByIdAsync(int id, string userId)
+        public async Task<Result<OrderResponse>> GetOrderByIdAsync(int id, string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("UserId is required", nameof(userId));
+                return Result.Failure<OrderResponse>(DomainErrors.User.IdRequired);
 
             var order = await _unitOfWork.Orders.GetByIdWithDetailsAsync(id);
             if (order == null)
             {
                 _logger.LogWarning("Order {OrderId} not found", id);
-                throw new KeyNotFoundException("Order not found.");
+                return Result.Failure<OrderResponse>(DomainErrors.Order.NotFound);
             }
 
             if (order.UserId != userId)
             {
                 _logger.LogWarning("User {UserId} attempted unauthorized access to order {OrderId} belonging to user {OrderOwnerId}",
                     userId, id, order.UserId);
-                throw new UnauthorizedAccessException("You are not authorized to view this order.");
+                return Result.Failure<OrderResponse>(DomainErrors.Order.Unauthorized);
             }
 
-            return _mapper.Map<OrderResponse>(order);
+            return Result.Success(_mapper.Map<OrderResponse>(order));
         }
 
-        public async Task<IEnumerable<OrderResponse>> GetUserOrdersAsync(string userId)
+        public async Task<Result<IEnumerable<OrderResponse>>> GetUserOrdersAsync(string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("UserId is required", nameof(userId));
+                return Result.Failure<IEnumerable<OrderResponse>>(DomainErrors.User.IdRequired);
 
             var orders = await _unitOfWork.Orders.GetUserOrdersAsync(userId);
-            return _mapper.Map<IEnumerable<OrderResponse>>(orders);
+            return Result.Success(_mapper.Map<IEnumerable<OrderResponse>>(orders));
         }
 
-        public async Task<OrderResponse> UpdateOrderStatusAsync(int id, OrderStatus status)
+        public async Task<Result<OrderResponse>> UpdateOrderStatusAsync(int id, OrderStatus status)
         {
             var order = await _unitOfWork.Orders.GetByIdAsync(id);
             if (order == null)
             {
                 _logger.LogWarning("Attempt to update status for non-existent order {OrderId}", id);
-                throw new KeyNotFoundException("Order not found.");
+                return Result.Failure<OrderResponse>(DomainErrors.Order.NotFound);
             }
 
             if (!IsValidStatusTransition(order.Status, status))
             {
                 _logger.LogWarning("Invalid status transition attempt for order {OrderId} from {CurrentStatus} to {NewStatus}",
                     id, order.Status, status);
-                throw new InvalidOperationException($"Cannot transition from {order.Status} to {status}.");
+                return Result.Failure<OrderResponse>(DomainErrors.Order.InvalidStatusTransition);
             }
 
             var previousStatus = order.Status;
@@ -130,22 +138,24 @@ namespace ECommerce.Application.Services
 
             _logger.LogInformation("Order {OrderId} status changed from {PreviousStatus} to {NewStatus}",
                 id, previousStatus, status);
-            return _mapper.Map<OrderResponse>(order);
+            return Result.Success(_mapper.Map<OrderResponse>(order));
         }
 
-        public async Task<PagedResult<OrderResponse>> SearchOrdersAsync(OrderParams orderParams, string? userId = null)
+        public async Task<Result<PagedResult<OrderResponse>>> SearchOrdersAsync(OrderParams orderParams, string? userId = null)
         {
             try
             {
                 var pagedOrders = await _unitOfWork.Orders.SearchOrdersAsync(orderParams, userId);
 
-                return new PagedResult<OrderResponse>
+                var result = new PagedResult<OrderResponse>
                 {
                     Items = _mapper.Map<List<OrderResponse>>(pagedOrders.Items),
                     TotalCount = pagedOrders.TotalCount,
                     PageNumber = pagedOrders.PageNumber,
                     PageSize = pagedOrders.PageSize
                 };
+
+                return Result.Success(result);
             }
             catch (Exception ex)
             {

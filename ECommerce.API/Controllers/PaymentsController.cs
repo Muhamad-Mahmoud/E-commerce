@@ -27,7 +27,14 @@ namespace ECommerce.API.Controllers
         [HttpPost("checkout")]
         public async Task<ActionResult<PaymentResultDto>> Checkout([FromBody] CheckoutRequest request)
         {
-            var order = await _orderService.GetOrderByIdAsync(request.OrderId, UserId);
+            var result = await _orderService.GetOrderByIdAsync(request.OrderId, UserId);
+            
+            if (result.IsFailure)
+            {
+                return HandleResult(result);
+            }
+
+            var order = result.Value;
             var domain = "http://localhost:3000/";
 
             var paymentRequest = new CreatePaymentRequest
@@ -40,7 +47,7 @@ namespace ECommerce.API.Controllers
                 CancelUrl = $"{domain}payment-cancel"
             };
 
-            return Ok(await _paymentService.CreateCheckoutSessionAsync(paymentRequest));
+            return HandleResult(await _paymentService.CreateCheckoutSessionAsync(paymentRequest));
         }
     }
 }

@@ -1,6 +1,7 @@
 using ECommerce.Application.DTO.Payment.Requests;
 using ECommerce.Application.DTO.Payment.Responses;
 using ECommerce.Application.Interfaces.Services;
+using ECommerce.Domain.Shared;
 using ECommerce.Infrastructure.Helper;
 using Microsoft.Extensions.Options;
 using Stripe;
@@ -18,7 +19,7 @@ namespace ECommerce.Infrastructure.Payment
             StripeConfiguration.ApiKey = _stripeSettings.Secretkey;
         }
 
-        public async Task<PaymentResultDto> CreateCheckoutSessionAsync(CreatePaymentRequest request)
+        public async Task<Result<PaymentResultDto>> CreateCheckoutSessionAsync(CreatePaymentRequest request)
         {
             var options = new SessionCreateOptions
             {
@@ -51,12 +52,12 @@ namespace ECommerce.Infrastructure.Payment
             var service = new SessionService();
             Session session = await service.CreateAsync(options);
 
-            return new PaymentResultDto
+            return Result.Success(new PaymentResultDto
             {
                 SessionId = session.Id,
                 Url = session.Url,
                 PaymentStatus = session.PaymentStatus
-            };
+            });
         }
     }
 }

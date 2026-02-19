@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ECommerce.API.Controllers
 {
     /// <summary>
-    /// User orders management.
+    /// Order management endpoints.
     /// </summary>
     [Authorize]
     public class OrdersController : BaseApiController
@@ -21,50 +21,56 @@ namespace ECommerce.API.Controllers
         }
 
         /// <summary>
-        /// Create order from cart.
+        /// Create a new order from the current user's cart.
         /// </summary>
         [HttpPost]
         public async Task<ActionResult<OrderResponse>> CreateOrder()
         {
-            var order = await _orderService.CreateOrderAsync(UserId);
-            return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, order);
+            var result = await _orderService.CreateOrderAsync(UserId);
+            
+            if (result.IsFailure)
+            {
+                return HandleResult(result);
+            }
+
+            return CreatedAtAction(nameof(GetOrderById), new { id = result.Value.Id }, result.Value);
         }
 
         /// <summary>
-        /// Get user's orders.
+        /// Get all orders for the current user.
         /// </summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderResponse>>> GetUserOrders()
         {
-            return Ok(await _orderService.GetUserOrdersAsync(UserId));
+            return HandleResult(await _orderService.GetUserOrdersAsync(UserId));
         }
 
         /// <summary>
-        /// Get order by id.
+        /// Get a specific order by ID.
         /// </summary>
         [HttpGet("{id}")]
         public async Task<ActionResult<OrderResponse>> GetOrderById(int id)
         {
-            return Ok(await _orderService.GetOrderByIdAsync(id, UserId));
+            return HandleResult(await _orderService.GetOrderByIdAsync(id, UserId));
         }
 
         /// <summary>
-        /// Update order status (Admin).
+        /// Update order status (Admin only).
         /// </summary>
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}/status")]
         public async Task<ActionResult<OrderResponse>> UpdateOrderStatus(int id, [FromBody] UpdateOrderStatusRequest updateDto)
         {
-            return Ok(await _orderService.UpdateOrderStatusAsync(id, updateDto.Status));
+            return HandleResult(await _orderService.UpdateOrderStatusAsync(id, updateDto.Status));
         }
 
         /// <summary>
-        /// Search user orders.
+        /// Search and filter user orders.
         /// </summary>
         [HttpGet("search")]
         public async Task<ActionResult<PagedResult<OrderResponse>>> SearchUserOrders([FromQuery] OrderParams orderParams)
         {
-            return Ok(await _orderService.SearchOrdersAsync(orderParams, UserId));
+            return HandleResult(await _orderService.SearchOrdersAsync(orderParams, UserId));
         }
     }
 }

@@ -1,10 +1,12 @@
 using ECommerce.Application.Interfaces.Repositories;
 using ECommerce.Application.Interfaces;
 using ECommerce.Domain.Interfaces.Repositories;
+using ECommerce.Domain.Interfaces;
+using ECommerce.Domain.Exceptions;
 using ECommerce.Infrastructure.Persistence;
 using ECommerce.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using ECommerce.Domain.Interfaces;
 
 namespace ECommerce.Infrastructure.UnitOfWork
 {
@@ -58,7 +60,14 @@ namespace ECommerce.Infrastructure.UnitOfWork
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            return await _context.SaveChangesAsync(cancellationToken);
+            try 
+            {
+                return await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                throw new ConcurrencyConflictException("A concurrency conflict occurred while saving changes.", ex);
+            }
         }
 
         public async Task BeginTransactionAsync()

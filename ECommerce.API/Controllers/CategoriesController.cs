@@ -7,77 +7,83 @@ using Microsoft.AspNetCore.Mvc;
 namespace ECommerce.API.Controllers
 {
     /// <summary>
-    /// Product categories management.
+    /// Category management endpoints.
     /// </summary>
     public class CategoriesController : BaseApiController
     {
         private readonly ICategoryService _categoryService;
-
+        
         public CategoriesController(ICategoryService categoryService)
         {
             _categoryService = categoryService;
         }
 
         /// <summary>
-        /// Get paginated categories.
+        /// Get paginated list of categories.
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetCategories([FromQuery] CategoryParams categoryParams)
         {
-            return Ok(await _categoryService.GetCategoriesAsync(categoryParams));
+            return HandleResult(await _categoryService.GetCategoriesAsync(categoryParams));
         }
 
         /// <summary>
-        /// Get all categories.
+        /// Get all categories without pagination.
         /// </summary>
         [HttpGet("all")]
         public async Task<IActionResult> GetAll()
         {
-            return Ok(await _categoryService.GetAllAsync());
+            return HandleResult(await _categoryService.GetAllAsync());
         }
 
         /// <summary>
-        /// Get category by id.
+        /// Get category by ID.
         /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var category = await _categoryService.GetByIdAsync(id);
-            return category == null ? NotFound() : Ok(category);
+            return HandleResult(await _categoryService.GetByIdAsync(id));
         }
 
         /// <summary>
-        /// Create new category (Admin).
+        /// Create a new category (Admin only).
         /// </summary>
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request, CancellationToken cancellationToken)
         {
-            var category = await _categoryService.CreateAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
+            var result = await _categoryService.CreateAsync(request, cancellationToken);
+            if (result.IsFailure) return HandleResult(result);
+            
+            return CreatedAtAction(nameof(GetById), new { id = result.Value.Id }, result.Value);
         }
 
         /// <summary>
-        /// Update category (Admin).
+        /// Update an existing category (Admin only).
         /// </summary>
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryRequest request, CancellationToken cancellationToken)
         {
             if (id != request.Id) return BadRequest("ID mismatch");
-            var updated = await _categoryService.UpdateAsync(request, cancellationToken);
-            return updated ? NoContent() : NotFound();
+            
+            var result = await _categoryService.UpdateAsync(request, cancellationToken);
+            if (result.IsFailure) return HandleResult(result);
+
+            return NoContent();
         }
 
         /// <summary>
-        /// Delete category (Admin).
+        /// Delete a category (Admin only).
         /// </summary>
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            var deleted = await _categoryService.DeleteAsync(id, cancellationToken);
-            return deleted ? NoContent() : NotFound();
+            var result = await _categoryService.DeleteAsync(id, cancellationToken);
+            if (result.IsFailure) return HandleResult(result);
+
+            return NoContent();
         }
     }
 }

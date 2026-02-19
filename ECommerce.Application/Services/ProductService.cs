@@ -4,7 +4,9 @@ using ECommerce.Application.DTO.Products.Requests;
 using ECommerce.Application.DTO.Products.Responses;
 using ECommerce.Application.Interfaces.Services;
 using ECommerce.Domain.Entities;
+using ECommerce.Domain.Errors;
 using ECommerce.Domain.Interfaces;
+using ECommerce.Domain.Shared;
 
 namespace ECommerce.Application.Services
 {
@@ -19,45 +21,46 @@ namespace ECommerce.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<PagedResult<ProductResponse>> GetProductsAsync(ProductParams productParams)
+        public async Task<Result<PagedResult<ProductResponse>>> GetProductsAsync(ProductParams productParams)
         {
-            return await _unitOfWork.Products.SearchProductsAsync(productParams);
+            var pagedResult = await _unitOfWork.Products.SearchProductsAsync(productParams);
+            return Result.Success(pagedResult);
         }
 
-        public async Task<ProductDetailsResponse?> GetProductByIdAsync(int id)
+        public async Task<Result<ProductDetailsResponse>> GetProductByIdAsync(int id)
         {
             var product = await _unitOfWork.Products.GetWithFullDetailsAsync(id);
-            if (product == null) return null;
-            return _mapper.Map<ProductDetailsResponse>(product);
+            if (product == null) return Result.Failure<ProductDetailsResponse>(DomainErrors.Product.NotFound);
+            return Result.Success(_mapper.Map<ProductDetailsResponse>(product));
         }
 
-        public async Task<bool> UpdateProductAsync(int id, UpdateProductRequest request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> UpdateProductAsync(int id, UpdateProductRequest request, CancellationToken cancellationToken)
         {
-            if (id != request.Id) return false;
+            if (id != request.Id) return Result.Failure<bool>(new Error("Product.IdMismatch", "ID mismatch"));
 
             var product = await _unitOfWork.Products.GetByIdAsync(
                 id,
                 p => p.Category
             );
 
-            if (product == null) return false;
+            if (product == null) return Result.Failure<bool>(DomainErrors.Product.NotFound);
 
             // Validate Category
             if (!await _unitOfWork.Categories.ExistsAsync(request.CategoryId))
-                throw new ArgumentException("Invalid Category ID");
+                return Result.Failure<bool>(new Error("Category.NotFound", "Invalid Category ID"));
 
             _mapper.Map(request, product);
 
             _unitOfWork.Products.Update(product);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return true;
+            return Result.Success(true);
         }
 
-        public async Task<ProductResponse> CreateProductAsync(CreateProductRequest request, CancellationToken cancellationToken)
+        public async Task<Result<ProductResponse>> CreateProductAsync(CreateProductRequest request, CancellationToken cancellationToken)
         {
             // Validate Category
             if (!await _unitOfWork.Categories.ExistsAsync(request.CategoryId))
-                throw new ArgumentException("Invalid Category ID");
+                return Result.Failure<ProductResponse>(new Error("Category.NotFound", "Invalid Category ID"));
 
             var product = _mapper.Map<Product>(request);
 
@@ -71,17 +74,17 @@ namespace ECommerce.Application.Services
                 p => p.Variants
             );
 
-            return _mapper.Map<ProductResponse>(createdProduct ?? product);
+            return Result.Success(_mapper.Map<ProductResponse>(createdProduct ?? product));
         }
 
-        public async Task<bool> DeleteProductAsync(int id, CancellationToken cancellationToken)
+        public async Task<Result<bool>> DeleteProductAsync(int id, CancellationToken cancellationToken)
         {
             var product = await _unitOfWork.Products.GetByIdAsync(id);
-            if (product == null) return false;
+            if (product == null) return Result.Failure<bool>(DomainErrors.Product.NotFound);
 
             _unitOfWork.Products.Delete(product);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return true;
+            return Result.Success(true);
         }
     }
 }

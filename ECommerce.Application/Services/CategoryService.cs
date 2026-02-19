@@ -4,7 +4,9 @@ using ECommerce.Application.DTO.Categories.Responses;
 using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Services;
 using ECommerce.Domain.Entities;
+using ECommerce.Domain.Errors;
 using ECommerce.Domain.Interfaces;
+using ECommerce.Domain.Shared;
 
 namespace ECommerce.Application.Services
 {
@@ -19,32 +21,33 @@ namespace ECommerce.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<CategoryResponse>> GetAllAsync()
+        public async Task<Result<IEnumerable<CategoryResponse>>> GetAllAsync()
         {
             var categories = await _unitOfWork.Categories.GetAllAsync(
                 c => c.ParentCategory
             );
 
-            return _mapper.Map<IEnumerable<CategoryResponse>>(categories);
+            return Result.Success(_mapper.Map<IEnumerable<CategoryResponse>>(categories));
         }
 
-        public async Task<PagedResult<CategoryResponse>> GetCategoriesAsync(CategoryParams categoryParams)
+        public async Task<Result<PagedResult<CategoryResponse>>> GetCategoriesAsync(CategoryParams categoryParams)
         {
-            return await _unitOfWork.Categories.SearchCategoriesAsync(categoryParams);
+            var pagedResult = await _unitOfWork.Categories.SearchCategoriesAsync(categoryParams);
+            return Result.Success(pagedResult);
         }
 
-        public async Task<CategoryResponse?> GetByIdAsync(int id)
+        public async Task<Result<CategoryResponse>> GetByIdAsync(int id)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(
                 id,
                 c => c.ParentCategory
             );
 
-            if (category == null) return null;
-            return _mapper.Map<CategoryResponse>(category);
+            if (category == null) return Result.Failure<CategoryResponse>(DomainErrors.Product.NotFound);
+            return Result.Success(_mapper.Map<CategoryResponse>(category));
         }
 
-        public async Task<CategoryResponse> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken)
+        public async Task<Result<CategoryResponse>> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken)
         {
             var category = _mapper.Map<Category>(request);
 
@@ -57,17 +60,17 @@ namespace ECommerce.Application.Services
                 c => c.ParentCategory
             );
 
-            return _mapper.Map<CategoryResponse>(savedCategory ?? category);
+            return Result.Success(_mapper.Map<CategoryResponse>(savedCategory ?? category));
         }
 
-        public async Task<bool> UpdateAsync(UpdateCategoryRequest request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> UpdateAsync(UpdateCategoryRequest request, CancellationToken cancellationToken)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(
                 request.Id,
                 c => c.ParentCategory
             );
 
-            if (category == null) return false;
+            if (category == null) return Result.Failure<bool>(DomainErrors.Product.NotFound);
 
             // Use Mapper to update existing entity
             _mapper.Map(request, category);
@@ -75,18 +78,18 @@ namespace ECommerce.Application.Services
             _unitOfWork.Categories.Update(category);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return true;
+            return Result.Success(true);
         }
 
-        public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
+        public async Task<Result<bool>> DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(id);
-            if (category == null) return false;
+            if (category == null) return Result.Failure<bool>(DomainErrors.Product.NotFound);
 
             _unitOfWork.Categories.Delete(category);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return true;
+            return Result.Success(true);
         }
     }
 }
