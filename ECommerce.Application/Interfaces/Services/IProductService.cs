@@ -13,8 +13,8 @@ namespace ECommerce.Application.Interfaces.Services
 
         Task<Result<ProductResponse>> CreateProductAsync(CreateProductRequest request, CancellationToken cancellationToken);
 
-        Task<Result<bool>> UpdateProductAsync(int id, UpdateProductRequest request, CancellationToken cancellationToken);
+        Task<Result> UpdateProductAsync(int id, UpdateProductRequest request, CancellationToken cancellationToken);
 
-        Task<Result<bool>> DeleteProductAsync(int id, CancellationToken cancellationToken);
+        Task<Result> DeleteProductAsync(int id, CancellationToken cancellationToken);
     }
 }

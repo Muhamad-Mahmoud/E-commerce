@@ -24,7 +24,7 @@ namespace ECommerce.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetCart()
         {
-            return Ok(await _shoppingCartService.GetCartAsync(UserId));
+            return HandleResult(await _shoppingCartService.GetCartAsync(UserId));
         }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace ECommerce.API.Controllers
         [HttpPost]
         public async Task<IActionResult> AddItem([FromBody] AddToCartRequest dto)
         {
-            return Ok(await _shoppingCartService.AddItemAsync(UserId, dto));
+            return HandleResult(await _shoppingCartService.AddItemAsync(UserId, dto));
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace ECommerce.API.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateItem([FromBody] UpdateCartItemRequest dto)
         {
-            return Ok(await _shoppingCartService.UpdateItemAsync(UserId, dto));
+            return HandleResult(await _shoppingCartService.UpdateItemAsync(UserId, dto));
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace ECommerce.API.Controllers
         [HttpDelete("{itemId}")]
         public async Task<IActionResult> RemoveItem(int itemId)
         {
-            return Ok(await _shoppingCartService.RemoveItemAsync(UserId, itemId));
+            return HandleResult(await _shoppingCartService.RemoveItemAsync(UserId, itemId));
         }
 
         /// <summary>
@@ -60,8 +60,7 @@ namespace ECommerce.API.Controllers
         [HttpDelete]
         public async Task<IActionResult> ClearCart()
         {
-            await _shoppingCartService.ClearCartAsync(UserId);
-            return NoContent();
+            return HandleResult(await _shoppingCartService.ClearCartAsync(UserId));
         }
     }
 }

@@ -43,7 +43,7 @@ namespace ECommerce.Application.Services
                 c => c.ParentCategory
             );
 
-            if (category == null) return Result.Failure<CategoryResponse>(DomainErrors.Product.NotFound);
+            if (category == null) return Result.Failure<CategoryResponse>(DomainErrors.Category.NotFound);
             return Result.Success(_mapper.Map<CategoryResponse>(category));
         }
 
@@ -63,14 +63,14 @@ namespace ECommerce.Application.Services
             return Result.Success(_mapper.Map<CategoryResponse>(savedCategory ?? category));
         }
 
-        public async Task<Result<bool>> UpdateAsync(UpdateCategoryRequest request, CancellationToken cancellationToken)
+        public async Task<Result> UpdateAsync(UpdateCategoryRequest request, CancellationToken cancellationToken)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(
                 request.Id,
                 c => c.ParentCategory
             );
 
-            if (category == null) return Result.Failure<bool>(DomainErrors.Product.NotFound);
+            if (category == null) return Result.Failure(DomainErrors.Category.NotFound);
 
             // Use Mapper to update existing entity
             _mapper.Map(request, category);
@@ -78,18 +78,18 @@ namespace ECommerce.Application.Services
             _unitOfWork.Categories.Update(category);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result.Success(true);
+            return Result.Success();
         }
 
-        public async Task<Result<bool>> DeleteAsync(int id, CancellationToken cancellationToken)
+        public async Task<Result> DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(id);
-            if (category == null) return Result.Failure<bool>(DomainErrors.Product.NotFound);
+            if (category == null) return Result.Failure(DomainErrors.Category.NotFound);
 
             _unitOfWork.Categories.Delete(category);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result.Success(true);
+            return Result.Success();
         }
     }
 }

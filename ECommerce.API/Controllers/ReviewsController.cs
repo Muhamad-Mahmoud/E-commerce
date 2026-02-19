@@ -24,8 +24,7 @@ namespace ECommerce.API.Controllers
         [Authorize]
         public async Task<IActionResult> AddReview(CreateReviewDto createReviewDto)
         {
-            var review = await _reviewService.AddReviewAsync(UserId, createReviewDto);
-            return Ok(review);
+            return HandleResult(await _reviewService.AddReviewAsync(UserId, createReviewDto));
         }
 
         /// <summary>
@@ -34,8 +33,7 @@ namespace ECommerce.API.Controllers
         [HttpGet("product/{productId}")]
         public async Task<IActionResult> GetProductReviews(int productId)
         {
-            var reviews = await _reviewService.GetProductReviewsAsync(productId);
-            return Ok(reviews);
+            return HandleResult(await _reviewService.GetProductReviewsAsync(productId));
         }
 
         /// <summary>
@@ -44,8 +42,10 @@ namespace ECommerce.API.Controllers
         [HttpGet("product/{productId}/rating")]
         public async Task<IActionResult> GetProductRating(int productId)
         {
-            var rating = await _reviewService.GetProductRatingAsync(productId);
-            return Ok(new { ProductId = productId, AverageRating = rating });
+            var result = await _reviewService.GetProductRatingAsync(productId);
+            return result.IsSuccess
+                ? Ok(new { ProductId = productId, AverageRating = result.Value })
+                : HandleResult(result);
         }
 
         /// <summary>
@@ -55,8 +55,7 @@ namespace ECommerce.API.Controllers
         [Authorize]
         public async Task<IActionResult> DeleteReview(int reviewId)
         {
-            var result = await _reviewService.DeleteReviewAsync(reviewId, UserId);
-            return result ? NoContent() : NotFound();
+            return HandleResult(await _reviewService.DeleteReviewAsync(reviewId, UserId));
         }
     }
 }

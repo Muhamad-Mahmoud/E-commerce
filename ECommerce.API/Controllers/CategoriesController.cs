@@ -66,11 +66,7 @@ namespace ECommerce.API.Controllers
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryRequest request, CancellationToken cancellationToken)
         {
             if (id != request.Id) return BadRequest("ID mismatch");
-            
-            var result = await _categoryService.UpdateAsync(request, cancellationToken);
-            if (result.IsFailure) return HandleResult(result);
-
-            return NoContent();
+            return HandleResult(await _categoryService.UpdateAsync(request, cancellationToken));
         }
 
         /// <summary>
@@ -80,10 +76,7 @@ namespace ECommerce.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            var result = await _categoryService.DeleteAsync(id, cancellationToken);
-            if (result.IsFailure) return HandleResult(result);
-
-            return NoContent();
+            return HandleResult(await _categoryService.DeleteAsync(id, cancellationToken));
         }
     }
 }

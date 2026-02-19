@@ -56,12 +56,7 @@ namespace ECommerce.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
         {
-            if (id != request.Id) return BadRequest("ID mismatch");
-            
-            var result = await _productService.UpdateProductAsync(id, request, cancellationToken);
-            if (result.IsFailure) return HandleResult(result);
-
-            return NoContent();
+            return HandleResult(await _productService.UpdateProductAsync(id, request, cancellationToken));
         }
 
         /// <summary>
@@ -71,10 +66,7 @@ namespace ECommerce.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id, CancellationToken cancellationToken)
         {
-            var result = await _productService.DeleteProductAsync(id, cancellationToken);
-            if (result.IsFailure) return HandleResult(result);
-
-            return NoContent();
+            return HandleResult(await _productService.DeleteProductAsync(id, cancellationToken));
         }
     }
 }

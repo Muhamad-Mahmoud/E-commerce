@@ -1,11 +1,10 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
 using ECommerce.Application.DTO.Reviews;
 using ECommerce.Application.Interfaces.Services;
 using ECommerce.Domain.Entities;
+using ECommerce.Domain.Errors;
 using ECommerce.Domain.Interfaces;
+using ECommerce.Domain.Shared;
 
 namespace ECommerce.Application.Services
 {
@@ -20,13 +19,17 @@ namespace ECommerce.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<ReviewDto> AddReviewAsync(string userId, CreateReviewDto createReviewDto)
+        public async Task<Result<ReviewDto>> AddReviewAsync(string userId, CreateReviewDto createReviewDto)
         {
             var product = await _unitOfWork.Products.GetByIdAsync(createReviewDto.ProductId);
             if (product == null)
-            {
-                throw new KeyNotFoundException("Product not found");
-            }
+                return Result.Failure<ReviewDto>(DomainErrors.Review.ProductNotFound);
+
+            var existingReview = await _unitOfWork.Reviews.GetFirstAsync(
+                r => r.ProductId == createReviewDto.ProductId && r.UserId == userId);
+
+            if (existingReview != null)
+                return Result.Failure<ReviewDto>(DomainErrors.Review.DuplicateReview);
 
             var review = new Review
             {
@@ -36,38 +39,40 @@ namespace ECommerce.Application.Services
                 Comment = createReviewDto.Comment,
                 Title = createReviewDto.Title,
                 CreatedAt = DateTime.UtcNow,
-                IsApproved = true // Automatically approve for now
+                IsApproved = false
             };
 
             await _unitOfWork.Reviews.AddAsync(review);
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<ReviewDto>(review);
+            return Result.Success(_mapper.Map<ReviewDto>(review));
         }
 
-        public async Task<IEnumerable<ReviewDto>> GetProductReviewsAsync(int productId)
+        public async Task<Result<IEnumerable<ReviewDto>>> GetProductReviewsAsync(int productId)
         {
             var reviews = await _unitOfWork.Reviews.GetProductReviewsAsync(productId);
-            return _mapper.Map<IEnumerable<ReviewDto>>(reviews);
+            return Result.Success(_mapper.Map<IEnumerable<ReviewDto>>(reviews));
         }
 
-        public async Task<double> GetProductRatingAsync(int productId)
+        public async Task<Result<double>> GetProductRatingAsync(int productId)
         {
-            return await _unitOfWork.Reviews.GetAverageRatingAsync(productId);
+            var rating = await _unitOfWork.Reviews.GetAverageRatingAsync(productId);
+            return Result.Success(rating);
         }
 
-        public async Task<bool> DeleteReviewAsync(int reviewId, string userId)
+        public async Task<Result> DeleteReviewAsync(int reviewId, string userId)
         {
             var review = await _unitOfWork.Reviews.GetByIdAsync(reviewId);
-            if (review == null) return false;
+            if (review == null)
+                return Result.Failure(DomainErrors.Review.NotFound);
 
             if (review.UserId != userId)
-            {
-                throw new UnauthorizedAccessException("You can only delete your own reviews");
-            }
+                return Result.Failure(DomainErrors.Review.Unauthorized);
 
             _unitOfWork.Reviews.Delete(review);
-            return await _unitOfWork.SaveChangesAsync() > 0;
+            await _unitOfWork.SaveChangesAsync();
+
+            return Result.Success();
         }
     }
 }

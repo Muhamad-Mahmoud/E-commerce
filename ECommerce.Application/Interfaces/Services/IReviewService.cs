@@ -1,14 +1,13 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using ECommerce.Application.DTO.Reviews;
+using ECommerce.Domain.Shared;
 
 namespace ECommerce.Application.Interfaces.Services
 {
     public interface IReviewService
     {
-        Task<ReviewDto> AddReviewAsync(string userId, CreateReviewDto createReviewDto);
-        Task<IEnumerable<ReviewDto>> GetProductReviewsAsync(int productId);
-        Task<double> GetProductRatingAsync(int productId);
-        Task<bool> DeleteReviewAsync(int reviewId, string userId);
+        Task<Result<ReviewDto>> AddReviewAsync(string userId, CreateReviewDto createReviewDto);
+        Task<Result<IEnumerable<ReviewDto>>> GetProductReviewsAsync(int productId);
+        Task<Result<double>> GetProductRatingAsync(int productId);
+        Task<Result> DeleteReviewAsync(int reviewId, string userId);
     }
 }

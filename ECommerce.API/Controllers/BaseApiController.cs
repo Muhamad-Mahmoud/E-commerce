@@ -18,12 +18,27 @@ namespace ECommerce.API.Controllers
                 return result.Error.Code switch
                 {
                     var code when code.Contains("NotFound") => NotFound(result.Error),
-                    var code when code.Contains("Unauthorized") => Forbid(),
+                    var code when code.Contains("Unauthorized") => StatusCode(403, result.Error),
                     _ => BadRequest(result.Error)
                 };
             }
 
             return Ok(result.Value);
+        }
+
+        protected ActionResult HandleResult(Result result)
+        {
+            if (result.IsFailure)
+            {
+                return result.Error.Code switch
+                {
+                    var code when code.Contains("NotFound") => NotFound(result.Error),
+                    var code when code.Contains("Unauthorized") => StatusCode(403, result.Error),
+                    _ => BadRequest(result.Error)
+                };
+            }
+
+            return NoContent();
         }
     }
 }

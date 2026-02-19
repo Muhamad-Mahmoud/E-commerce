@@ -143,26 +143,17 @@ namespace ECommerce.Application.Services
 
         public async Task<Result<PagedResult<OrderResponse>>> SearchOrdersAsync(OrderParams orderParams, string? userId = null)
         {
-            try
-            {
-                var pagedOrders = await _unitOfWork.Orders.SearchOrdersAsync(orderParams, userId);
+            var pagedOrders = await _unitOfWork.Orders.SearchOrdersAsync(orderParams, userId);
 
-                var result = new PagedResult<OrderResponse>
-                {
-                    Items = _mapper.Map<List<OrderResponse>>(pagedOrders.Items),
-                    TotalCount = pagedOrders.TotalCount,
-                    PageNumber = pagedOrders.PageNumber,
-                    PageSize = pagedOrders.PageSize
-                };
-
-                return Result.Success(result);
-            }
-            catch (Exception ex)
+            var result = new PagedResult<OrderResponse>
             {
-                _logger.LogError(ex, "Error searching orders with parameters: {@OrderParams}, UserId: {UserId}",
-                    orderParams, userId);
-                throw;
-            }
+                Items = _mapper.Map<List<OrderResponse>>(pagedOrders.Items),
+                TotalCount = pagedOrders.TotalCount,
+                PageNumber = pagedOrders.PageNumber,
+                PageSize = pagedOrders.PageSize
+            };
+
+            return Result.Success(result);
         }
 
         private void ProcessOrderItems(IEnumerable<ShoppingCartItem> cartItems, Order order)

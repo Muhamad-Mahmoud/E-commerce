@@ -23,7 +23,7 @@ namespace ECommerce.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetWishlist()
         {
-            return Ok(await _wishlistService.GetWishlistAsync(UserId));
+            return HandleResult(await _wishlistService.GetWishlistAsync(UserId));
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace ECommerce.API.Controllers
         [HttpPost("{productId}")]
         public async Task<IActionResult> AddToWishlist(int productId)
         {
-            return Ok(await _wishlistService.AddToWishlistAsync(UserId, productId));
+            return HandleResult(await _wishlistService.AddToWishlistAsync(UserId, productId));
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace ECommerce.API.Controllers
         [HttpDelete("{productId}")]
         public async Task<IActionResult> RemoveFromWishlist(int productId)
         {
-            return Ok(await _wishlistService.RemoveFromWishlistAsync(UserId, productId));
+            return HandleResult(await _wishlistService.RemoveFromWishlistAsync(UserId, productId));
         }
 
         /// <summary>
@@ -50,8 +50,7 @@ namespace ECommerce.API.Controllers
         [HttpDelete]
         public async Task<IActionResult> ClearWishlist()
         {
-            var result = await _wishlistService.ClearWishlistAsync(UserId);
-            return result ? NoContent() : BadRequest("Could not clear wishlist");
+            return HandleResult(await _wishlistService.ClearWishlistAsync(UserId));
         }
     }
 }

@@ -15,8 +15,8 @@ namespace ECommerce.Application.Interfaces.Services
 
         Task<Result<CategoryResponse>> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken);
 
-        Task<Result<bool>> UpdateAsync(UpdateCategoryRequest request, CancellationToken cancellationToken);
+        Task<Result> UpdateAsync(UpdateCategoryRequest request, CancellationToken cancellationToken);
 
-        Task<Result<bool>> DeleteAsync(int id, CancellationToken cancellationToken);
+        Task<Result> DeleteAsync(int id, CancellationToken cancellationToken);
     }
 }

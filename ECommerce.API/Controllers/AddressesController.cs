@@ -24,7 +24,7 @@ namespace ECommerce.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUserAddresses()
         {
-            return Ok(await _addressService.GetUserAddressesAsync(UserId));
+            return HandleResult(await _addressService.GetUserAddressesAsync(UserId));
         }
 
         /// <summary>
@@ -33,8 +33,7 @@ namespace ECommerce.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var address = await _addressService.GetByIdAsync(id, UserId);
-            return address == null ? NotFound() : Ok(address);
+            return HandleResult(await _addressService.GetByIdAsync(id, UserId));
         }
 
         /// <summary>
@@ -43,8 +42,9 @@ namespace ECommerce.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateAddressDto request, CancellationToken cancellationToken)
         {
-            var address = await _addressService.CreateAsync(UserId, request, cancellationToken);
-            return CreatedAtAction(nameof(GetById), new { id = address.Id }, address);
+            var result = await _addressService.CreateAsync(UserId, request, cancellationToken);
+            if (result.IsFailure) return HandleResult(result);
+            return CreatedAtAction(nameof(GetById), new { id = result.Value.Id }, result.Value);
         }
 
         /// <summary>
@@ -53,8 +53,7 @@ namespace ECommerce.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            var deleted = await _addressService.DeleteAsync(id, UserId, cancellationToken);
-            return deleted ? NoContent() : NotFound();
+            return HandleResult(await _addressService.DeleteAsync(id, UserId, cancellationToken));
         }
     }
 }
