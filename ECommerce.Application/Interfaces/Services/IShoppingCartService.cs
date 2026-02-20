@@ -1,6 +1,6 @@
 using ECommerce.Application.DTO.Cart.Requests;
 using ECommerce.Application.DTO.Cart.Responses;
-using ECommerce.Domain.Shared;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Application.Interfaces.Services
 {

@@ -1,6 +1,6 @@
-﻿using ECommerce.Application.DTO.Payment.Requests;
+using ECommerce.Application.DTO.Payment.Requests;
 using ECommerce.Application.DTO.Payment.Responses;
-using ECommerce.Domain.Shared;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Application.Interfaces.Services
 {

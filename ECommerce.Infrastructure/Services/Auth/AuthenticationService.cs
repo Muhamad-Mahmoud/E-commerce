@@ -1,11 +1,15 @@
 using ECommerce.Application.DTO.Auth.Requests;
 using ECommerce.Application.DTO.Auth.Responses;
 using ECommerce.Application.Interfaces.Services.Auth;
+using ECommerce.Domain.Exceptions;
 using ECommerce.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 
 namespace ECommerce.Infrastructure.Services.Auth
 {
+    /// <summary>
+    /// Service for handling user authentication and account management.
+    /// </summary>
     public class AuthenticationService : IAuthenticationService
     {
         private readonly UserManager<ApplicationUser> _userManager;
@@ -13,6 +17,9 @@ namespace ECommerce.Infrastructure.Services.Auth
         private readonly ITokenService _tokenService;
         private readonly IRefreshTokenService _refreshTokenService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AuthenticationService"/> class.
+        /// </summary>
         public AuthenticationService(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
@@ -25,7 +32,10 @@ namespace ECommerce.Infrastructure.Services.Auth
             _refreshTokenService = refreshTokenService;
         }
 
-        public async Task<AuthenticationResponse> RegisterAsync(RegisterRequest request)
+        /// <summary>
+        /// Registers a new user.
+        /// </summary>
+        public async Task<Result<AuthenticationResponse>> RegisterAsync(RegisterRequest request)
         {
             var user = new ApplicationUser
             {
@@ -39,11 +49,8 @@ namespace ECommerce.Infrastructure.Services.Auth
 
             if (!result.Succeeded)
             {
-                return new AuthenticationResponse
-                {
-                    Success = false,
-                    Errors = result.Errors.Select(e => e.Description).ToList()
-                };
+                var firstError = result.Errors.FirstOrDefault();
+                return Result.Failure<AuthenticationResponse>(new Error("Auth.RegistrationError", firstError?.Description ?? "Registration failed", 400));
             }
 
             // Assign Default Role
@@ -54,36 +61,30 @@ namespace ECommerce.Infrastructure.Services.Auth
             var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email!, roles);
             var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id);
 
-            return new AuthenticationResponse
+            return Result.Success(new AuthenticationResponse
             {
-                Success = true,
                 Token = accessToken,
                 RefreshToken = refreshToken.Token,
                 User = new UserResponse { Identifier = user.Id, Email = user.Email!, FullName = user.FullName, Roles = roles }
-            };
+            });
         }
 
-        public async Task<AuthenticationResponse> LoginAsync(LoginRequest request)
+        /// <summary>
+        /// Authenticates a user and returns authentication tokens.
+        /// </summary>
+        public async Task<Result<AuthenticationResponse>> LoginAsync(LoginRequest request)
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
-                return new AuthenticationResponse
-                {
-                    Success = false,
-                    Errors = new List<string> { "Invalid email or password" }
-                };
+                return Result.Failure<AuthenticationResponse>(DomainErrors.Authentication.InvalidCredentials);
             }
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
 
             if (!result.Succeeded)
             {
-                return new AuthenticationResponse
-                {
-                    Success = false,
-                    Errors = new List<string> { "Invalid email or password" }
-                };
+                return Result.Failure<AuthenticationResponse>(DomainErrors.Authentication.InvalidCredentials);
             }
 
             // Generate Tokens
@@ -91,57 +92,54 @@ namespace ECommerce.Infrastructure.Services.Auth
             var accessToken = _tokenService.GenerateAccessToken(user.Id, user.Email!, roles);
             var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id);
 
-            return new AuthenticationResponse
+            return Result.Success(new AuthenticationResponse
             {
-                Success = true,
                 Token = accessToken,
                 RefreshToken = refreshToken.Token,
                 User = new UserResponse { Identifier = user.Id, Email = user.Email!, FullName = user.FullName, Roles = roles }
-            };
+            });
         }
 
-
-
-        public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request)
+        /// <summary>
+        /// Changes the current user's password.
+        /// </summary>
+        public async Task<Result> ChangePasswordAsync(ChangePasswordRequest request)
         {
             var user = await _userManager.FindByIdAsync(request.UserId);
-            if (user == null) return false;
+            if (user == null) return Result.Failure(DomainErrors.Authentication.UserNotFound);
 
             var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
-            return result.Succeeded;
+            return result.Succeeded ? Result.Success() : Result.Failure(new Error("Auth.ChangePasswordError", result.Errors.FirstOrDefault()?.Description ?? "Failed to change password", 400));
         }
 
-        public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
+        /// <summary>
+        /// Resets a user's password using a reset token.
+        /// </summary>
+        public async Task<Result> ResetPasswordAsync(ResetPasswordRequest request)
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user == null) return false;
+            if (user == null) return Result.Failure(DomainErrors.Authentication.UserNotFound);
 
             var result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
-            return result.Succeeded;
+            return result.Succeeded ? Result.Success() : Result.Failure(new Error("Auth.ResetPasswordError", result.Errors.FirstOrDefault()?.Description ?? "Failed to reset password", 400));
         }
 
-
-        public async Task<AuthenticationResponse> RefreshTokenAsync(string token)
+        /// <summary>
+        /// Refreshes the authentication tokens using a refresh token.
+        /// </summary>
+        public async Task<Result<AuthenticationResponse>> RefreshTokenAsync(string token)
         {
             var storedToken = await _refreshTokenService.GetByTokenAsync(token);
 
             if (storedToken == null || !storedToken.IsActive)
             {
-                return new AuthenticationResponse
-                {
-                    Success = false,
-                    Errors = new List<string> { "Invalid or expired refresh token" }
-                };
+                return Result.Failure<AuthenticationResponse>(DomainErrors.Authentication.InvalidRefreshToken);
             }
 
             var user = await _userManager.FindByIdAsync(storedToken.UserId);
             if (user == null)
             {
-                return new AuthenticationResponse
-                {
-                    Success = false,
-                    Errors = new List<string> { "User not found" }
-                };
+                return Result.Failure<AuthenticationResponse>(DomainErrors.Authentication.UserNotFound);
             }
 
             // Token Rotation: Revoke the used refresh token
@@ -152,14 +150,12 @@ namespace ECommerce.Infrastructure.Services.Auth
             var newAccessToken = _tokenService.GenerateAccessToken(user.Id, user.Email!, roles);
             var newRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id);
 
-            return new AuthenticationResponse
+            return Result.Success(new AuthenticationResponse
             {
-                Success = true,
                 Token = newAccessToken,
                 RefreshToken = newRefreshToken.Token,
                 User = new UserResponse { Identifier = user.Id, Email = user.Email!, FullName = user.FullName, Roles = roles }
-            };
+            });
         }
-
     }
 }

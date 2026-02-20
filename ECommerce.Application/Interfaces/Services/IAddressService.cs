@@ -1,6 +1,6 @@
 using ECommerce.Application.DTO.Addresses.Requests;
 using ECommerce.Application.DTO.Addresses.Responses;
-using ECommerce.Domain.Shared;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Application.Interfaces.Services
 {

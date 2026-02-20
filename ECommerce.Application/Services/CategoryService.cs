@@ -1,41 +1,56 @@
+using ECommerce.Domain.Exceptions;
 using AutoMapper;
 using ECommerce.Application.DTO.Categories.Requests;
 using ECommerce.Application.DTO.Categories.Responses;
 using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Services;
 using ECommerce.Domain.Entities;
-using ECommerce.Domain.Errors;
 using ECommerce.Domain.Interfaces;
-using ECommerce.Domain.Shared;
 
 namespace ECommerce.Application.Services
 {
+    /// <summary>
+    /// Service for managing categories.
+    /// </summary>
     public class CategoryService : ICategoryService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CategoryService"/> class.
+        /// </summary>
         public CategoryService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Gets all categories without pagination.
+        /// </summary>
         public async Task<Result<IEnumerable<CategoryResponse>>> GetAllAsync()
         {
             var categories = await _unitOfWork.Categories.GetAllAsync(
                 c => c.ParentCategory
             );
 
-            return Result.Success(_mapper.Map<IEnumerable<CategoryResponse>>(categories));
+            var mapped = _mapper.Map<IEnumerable<CategoryResponse>>(categories) ?? Enumerable.Empty<CategoryResponse>();
+            return Result.Success(mapped);
         }
 
+        /// <summary>
+        /// Gets a paginated list of categories based on search parameters.
+        /// </summary>
         public async Task<Result<PagedResult<CategoryResponse>>> GetCategoriesAsync(CategoryParams categoryParams)
         {
             var pagedResult = await _unitOfWork.Categories.SearchCategoriesAsync(categoryParams);
             return Result.Success(pagedResult);
         }
 
+        /// <summary>
+        /// Gets a category by ID.
+        /// </summary>
         public async Task<Result<CategoryResponse>> GetByIdAsync(int id)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(
@@ -44,9 +59,12 @@ namespace ECommerce.Application.Services
             );
 
             if (category == null) return Result.Failure<CategoryResponse>(DomainErrors.Category.NotFound);
-            return Result.Success(_mapper.Map<CategoryResponse>(category));
+            return Result.Success(_mapper.Map<CategoryResponse>(category)!);
         }
 
+        /// <summary>
+        /// Creates a new category.
+        /// </summary>
         public async Task<Result<CategoryResponse>> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken)
         {
             var category = _mapper.Map<Category>(request);
@@ -60,9 +78,12 @@ namespace ECommerce.Application.Services
                 c => c.ParentCategory
             );
 
-            return Result.Success(_mapper.Map<CategoryResponse>(savedCategory ?? category));
+            return Result.Success(_mapper.Map<CategoryResponse>(savedCategory ?? category)!);
         }
 
+        /// <summary>
+        /// Updates an existing category.
+        /// </summary>
         public async Task<Result> UpdateAsync(UpdateCategoryRequest request, CancellationToken cancellationToken)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(
@@ -81,6 +102,9 @@ namespace ECommerce.Application.Services
             return Result.Success();
         }
 
+        /// <summary>
+        /// Deletes a category.
+        /// </summary>
         public async Task<Result> DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(id);

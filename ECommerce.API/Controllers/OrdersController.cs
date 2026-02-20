@@ -1,3 +1,4 @@
+using ECommerce.Domain.Exceptions;
 using ECommerce.Application.DTO.Orders.Requests;
 using ECommerce.Application.DTO.Orders.Responses;
 using ECommerce.Application.DTO.Pagination;

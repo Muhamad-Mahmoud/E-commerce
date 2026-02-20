@@ -1,3 +1,4 @@
+using ECommerce.Domain.Exceptions;
 using ECommerce.Application.DTO.Categories.Responses;
 using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Repositories;
@@ -56,13 +57,7 @@ namespace ECommerce.Infrastructure.Repositories
                 })
                 .ToListAsync();
 
-            return new PagedResult<CategoryResponse>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                PageNumber = p.PageNumber,
-                PageSize = p.PageSize
-            };
+            return new PagedResult<CategoryResponse>(p.PageNumber, p.PageSize, totalCount, items);
         }
 
         public async Task<IEnumerable<Category>> GetRootCategoriesAsync()

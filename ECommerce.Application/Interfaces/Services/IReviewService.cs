@@ -1,5 +1,5 @@
 using ECommerce.Application.DTO.Reviews;
-using ECommerce.Domain.Shared;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Application.Interfaces.Services
 {

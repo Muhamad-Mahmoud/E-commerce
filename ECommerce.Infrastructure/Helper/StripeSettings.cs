@@ -1,4 +1,4 @@
-﻿namespace ECommerce.Infrastructure.Helper
+namespace ECommerce.Infrastructure.Helper
 {
     public class StripeSettings
     {

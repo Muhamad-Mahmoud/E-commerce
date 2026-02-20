@@ -1,6 +1,6 @@
 namespace ECommerce.Domain.Exceptions
 {
-    public class ConcurrencyConflictException : Exception
+    public class ConcurrencyConflictException : DomainException
     {
         public ConcurrencyConflictException() 
             : base("A concurrency conflict occurred. The data has been modified by another user.")

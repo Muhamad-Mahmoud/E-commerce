@@ -1,44 +1,32 @@
 using System.Security.Claims;
-using ECommerce.Domain.Shared;
+using ECommerce.API.Extensions;
+using ECommerce.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Controllers
 {
+    /// <summary>
+    /// Base API controller providing common functionality like user context and result handling.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public abstract class BaseApiController : ControllerBase
     {
+        /// <summary>
+        /// Gets the current authenticated user's ID.
+        /// </summary>
         protected string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) 
             ?? throw new UnauthorizedAccessException("User not authenticated or ID claim missing.");
 
-        protected ActionResult HandleResult<T>(Result<T> result)
-        {
-            if (result.IsFailure)
-            {
-                return result.Error.Code switch
-                {
-                    var code when code.Contains("NotFound") => NotFound(result.Error),
-                    var code when code.Contains("Unauthorized") => StatusCode(403, result.Error),
-                    _ => BadRequest(result.Error)
-                };
-            }
+        /// <summary>
+        /// Handles the <see cref="Result{T}"/> by converting it to an <see cref="ActionResult"/>.
+        /// </summary>
+        protected ActionResult HandleResult<T>(Result<T> result) => result.ToActionResult();
 
-            return Ok(result.Value);
-        }
-
-        protected ActionResult HandleResult(Result result)
-        {
-            if (result.IsFailure)
-            {
-                return result.Error.Code switch
-                {
-                    var code when code.Contains("NotFound") => NotFound(result.Error),
-                    var code when code.Contains("Unauthorized") => StatusCode(403, result.Error),
-                    _ => BadRequest(result.Error)
-                };
-            }
-
-            return NoContent();
-        }
+        /// <summary>
+        /// Handles the <see cref="Result"/> by converting it to an <see cref="ActionResult"/>.
+        /// </summary>
+        protected ActionResult HandleResult(Result result) => result.ToActionResult();
     }
 }
+

@@ -1,3 +1,4 @@
+using ECommerce.Domain.Exceptions;
 using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.DTO.Products.Responses;
 using ECommerce.Application.Interfaces.Repositories;
@@ -92,13 +93,7 @@ namespace ECommerce.Infrastructure.Repositories
                 })
                 .ToListAsync();
 
-            return new PagedResult<ProductResponse>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                PageNumber = p.PageNumber,
-                PageSize = p.PageSize
-            };
+            return new PagedResult<ProductResponse>(p.PageNumber, p.PageSize, totalCount, items);
         }
     }
 }

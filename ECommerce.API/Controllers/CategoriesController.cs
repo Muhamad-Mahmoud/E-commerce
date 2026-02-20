@@ -1,6 +1,7 @@
 using ECommerce.Application.DTO.Categories.Requests;
 using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Services;
+using ECommerce.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -65,7 +66,7 @@ namespace ECommerce.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryRequest request, CancellationToken cancellationToken)
         {
-            if (id != request.Id) return BadRequest("ID mismatch");
+            if (id != request.Id) return HandleResult(Result.Failure(DomainErrors.General.IdMismatch));
             return HandleResult(await _categoryService.UpdateAsync(request, cancellationToken));
         }
 

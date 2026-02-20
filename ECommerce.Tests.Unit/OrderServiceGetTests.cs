@@ -1,10 +1,10 @@
+using ECommerce.Domain.Exceptions;
 using AutoMapper;
 using ECommerce.Application.DTO.Orders.Responses;
 using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Repositories;
 using ECommerce.Application.Services;
 using ECommerce.Domain.Entities;
-using ECommerce.Domain.Errors;
 using ECommerce.Domain.Interfaces;
 using ECommerce.Domain.Interfaces.Repositories;
 using FluentAssertions;
@@ -126,7 +126,7 @@ namespace ECommerce.Tests.Unit
         {
             // Arrange
             var paramsDto = new OrderParams { PageNumber = 1, PageSize = 10 };
-            var pagedOrders = new PagedResult<Order> { Items = new List<Order> { new Order() }, TotalCount = 1 };
+            var pagedOrders = new PagedResult<Order>(1, 10, 1, new List<Order> { new Order() });
 
             _orderRepoMock.Setup(r => r.SearchOrdersAsync(paramsDto, null)).ReturnsAsync(pagedOrders);
             _mapperMock.Setup(m => m.Map<List<OrderResponse>>(pagedOrders.Items)).Returns(new List<OrderResponse> { new OrderResponse() });

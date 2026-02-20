@@ -1,7 +1,8 @@
+using ECommerce.Domain.Exceptions;
 using ECommerce.Application.DTO.Categories.Requests;
 using ECommerce.Application.DTO.Categories.Responses;
 using ECommerce.Application.DTO.Pagination;
-using ECommerce.Domain.Shared;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Application.Interfaces.Services
 {

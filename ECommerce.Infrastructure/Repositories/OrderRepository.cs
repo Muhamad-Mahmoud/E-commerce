@@ -1,3 +1,4 @@
+using ECommerce.Domain.Exceptions;
 using ECommerce.Application.DTO.Pagination;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Enums;
@@ -124,13 +125,7 @@ namespace ECommerce.Infrastructure.Repositories
                 .Take(p.PageSize)
                 .ToListAsync();
 
-            return new PagedResult<Order>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                PageNumber = p.PageNumber,
-                PageSize = p.PageSize
-            };
+            return new PagedResult<Order>(p.PageNumber, p.PageSize, totalCount, items);
         }
 
         private IQueryable<Order> ApplyDefaultIncludes(IQueryable<Order> query)

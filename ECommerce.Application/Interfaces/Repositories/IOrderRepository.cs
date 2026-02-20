@@ -1,3 +1,4 @@
+using ECommerce.Domain.Exceptions;
 using ECommerce.Application.DTO.Pagination;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Enums;

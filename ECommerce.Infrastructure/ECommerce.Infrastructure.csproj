@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <Folder Include="DependencyInjection\" />
-    <Folder Include="Payment\" />
+    <Folder Include="Services\Payment\" />
     <Folder Include="Persistence\Config\" />
     <Folder Include="Repositories\" />
   </ItemGroup>

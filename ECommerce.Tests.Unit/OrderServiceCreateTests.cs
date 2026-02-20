@@ -3,7 +3,7 @@ using ECommerce.Application.DTO.Orders.Responses;
 using ECommerce.Application.Interfaces.Repositories;
 using ECommerce.Application.Services;
 using ECommerce.Domain.Entities;
-using ECommerce.Domain.Errors;
+using ECommerce.Domain.Exceptions;
 using ECommerce.Domain.Interfaces;
 using ECommerce.Domain.Interfaces.Repositories;
 using FluentAssertions;

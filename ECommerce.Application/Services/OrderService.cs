@@ -5,20 +5,24 @@ using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.Interfaces.Services;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Enums;
-using ECommerce.Domain.Errors;
 using ECommerce.Domain.Exceptions;
 using ECommerce.Domain.Interfaces;
-using ECommerce.Domain.Shared;
 using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Application.Services
 {
+    /// <summary>
+    /// Service for managing orders, including creation, status updates, and retrieval.
+    /// </summary>
     public class OrderService : IOrderService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<OrderService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="OrderService"/> class.
+        /// </summary>
         public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger)
         {
             _unitOfWork = unitOfWork;
@@ -26,6 +30,9 @@ namespace ECommerce.Application.Services
             _logger = logger;
         }
 
+        /// <summary>
+        /// Creates a new order for the specified user based on their current shopping cart.
+        /// </summary>
         public async Task<Result<OrderResponse>> CreateOrderAsync(string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
@@ -62,7 +69,7 @@ namespace ECommerce.Application.Services
                 await _unitOfWork.CommitTransactionAsync();
 
                 _logger.LogInformation("Order {OrderNumber} created for user {UserId}", order.OrderNumber, userId);
-                return Result.Success(_mapper.Map<OrderResponse>(order));
+                return Result.Success(_mapper.Map<OrderResponse>(order)!);
             }
             catch (InsufficientStockException ex)
             {
@@ -84,6 +91,9 @@ namespace ECommerce.Application.Services
             }
         }
 
+        /// <summary>
+        /// Gets an order by its ID, ensuring it belongs to the specified user.
+        /// </summary>
         public async Task<Result<OrderResponse>> GetOrderByIdAsync(int id, string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
@@ -103,18 +113,24 @@ namespace ECommerce.Application.Services
                 return Result.Failure<OrderResponse>(DomainErrors.Order.Unauthorized);
             }
 
-            return Result.Success(_mapper.Map<OrderResponse>(order));
+            return Result.Success(_mapper.Map<OrderResponse>(order)!);
         }
 
+        /// <summary>
+        /// Gets all orders for a specific user.
+        /// </summary>
         public async Task<Result<IEnumerable<OrderResponse>>> GetUserOrdersAsync(string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
                 return Result.Failure<IEnumerable<OrderResponse>>(DomainErrors.User.IdRequired);
 
             var orders = await _unitOfWork.Orders.GetUserOrdersAsync(userId);
-            return Result.Success(_mapper.Map<IEnumerable<OrderResponse>>(orders));
+            return Result.Success(_mapper.Map<IEnumerable<OrderResponse>>(orders) ?? Enumerable.Empty<OrderResponse>());
         }
 
+        /// <summary>
+        /// Updates the status of an existing order.
+        /// </summary>
         public async Task<Result<OrderResponse>> UpdateOrderStatusAsync(int id, OrderStatus status)
         {
             var order = await _unitOfWork.Orders.GetByIdAsync(id);
@@ -138,20 +154,21 @@ namespace ECommerce.Application.Services
 
             _logger.LogInformation("Order {OrderId} status changed from {PreviousStatus} to {NewStatus}",
                 id, previousStatus, status);
-            return Result.Success(_mapper.Map<OrderResponse>(order));
+            return Result.Success(_mapper.Map<OrderResponse>(order)!);
         }
 
+        /// <summary>
+        /// Searches for orders based on specific parameters, optionally filtering by user.
+        /// </summary>
         public async Task<Result<PagedResult<OrderResponse>>> SearchOrdersAsync(OrderParams orderParams, string? userId = null)
         {
             var pagedOrders = await _unitOfWork.Orders.SearchOrdersAsync(orderParams, userId);
 
-            var result = new PagedResult<OrderResponse>
-            {
-                Items = _mapper.Map<List<OrderResponse>>(pagedOrders.Items),
-                TotalCount = pagedOrders.TotalCount,
-                PageNumber = pagedOrders.PageNumber,
-                PageSize = pagedOrders.PageSize
-            };
+            var result = new PagedResult<OrderResponse>(
+                pagedOrders.PageNumber,
+                pagedOrders.PageSize,
+                pagedOrders.TotalCount,
+                _mapper.Map<List<OrderResponse>>(pagedOrders.Items) ?? new List<OrderResponse>());
 
             return Result.Success(result);
         }

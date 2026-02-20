@@ -9,13 +9,13 @@ using ECommerce.Infrastructure.Persistence;
 using ECommerce.Infrastructure.Services.Auth;
 using ECommerce.Infrastructure.Services;
 using ECommerce.Infrastructure.UnitOfWork;
-using ECommerce.Infrastructure.Payment;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using ECommerce.Infrastructure.Services.Payment;
 
 namespace ECommerce.Infrastructure.DependencyInjection
 {

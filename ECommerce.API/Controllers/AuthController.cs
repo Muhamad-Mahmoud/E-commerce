@@ -24,8 +24,7 @@ namespace ECommerce.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            var result = await _authenticationService.RegisterAsync(request);
-            return result.Success ? Ok(result) : BadRequest(result);
+            return HandleResult(await _authenticationService.RegisterAsync(request));
         }
 
         /// <summary>
@@ -34,8 +33,7 @@ namespace ECommerce.API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            var result = await _authenticationService.LoginAsync(request);
-            return result.Success ? Ok(result) : Unauthorized(result);
+            return HandleResult(await _authenticationService.LoginAsync(request));
         }
 
         /// <summary>
@@ -44,11 +42,7 @@ namespace ECommerce.API.Controllers
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
-            if (string.IsNullOrEmpty(request.Token))
-                return BadRequest(new AuthenticationResponse { Success = false, Errors = new List<string> { "Refresh token is required" } });
-
-            var result = await _authenticationService.RefreshTokenAsync(request.Token);
-            return result.Success ? Ok(result) : BadRequest(result);
+            return HandleResult(await _authenticationService.RefreshTokenAsync(request.Token));
         }
 
 

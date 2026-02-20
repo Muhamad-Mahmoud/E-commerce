@@ -1,13 +1,13 @@
 using ECommerce.Application.DTO.Payment.Requests;
 using ECommerce.Application.DTO.Payment.Responses;
 using ECommerce.Application.Interfaces.Services;
-using ECommerce.Domain.Shared;
+using ECommerce.Domain.Exceptions;
 using ECommerce.Infrastructure.Helper;
 using Microsoft.Extensions.Options;
 using Stripe;
 using Stripe.Checkout;
 
-namespace ECommerce.Infrastructure.Payment
+namespace ECommerce.Infrastructure.Services.Payment
 {
     public class StripePaymentService : IPaymentService
     {
