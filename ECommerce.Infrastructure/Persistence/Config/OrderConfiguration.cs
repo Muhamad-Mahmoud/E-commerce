@@ -23,6 +23,16 @@ namespace ECommerce.Infrastructure.Persistence.Config
                 .HasForeignKey(o => o.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.OwnsOne(o => o.ShippingAddress, sa =>
+            {
+                sa.Property(p => p.FullName).IsRequired().HasMaxLength(100);
+                sa.Property(p => p.Phone).IsRequired().HasMaxLength(20);
+                sa.Property(p => p.Country).IsRequired().HasMaxLength(50);
+                sa.Property(p => p.City).IsRequired().HasMaxLength(50);
+                sa.Property(p => p.Street).HasMaxLength(200);
+                sa.Property(p => p.PostalCode).HasMaxLength(20);
+            });
+
             builder.HasIndex(o => o.OrderNumber).IsUnique();
         }
     }

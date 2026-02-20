@@ -89,8 +89,8 @@ namespace ECommerce.Infrastructure.Persistence
                     Status = ProductStatus.Published,
                     Variants = new List<ProductVariant>
                     {
-                        new ProductVariant { SKU = "MAC-16-SILVER", VariantName = "Silver Base", Price = 2499, StockQuantity = 10, Color = "Silver" },
-                        new ProductVariant { SKU = "MAC-16-SPACE", VariantName = "Space Black", Price = 2599, StockQuantity = 5, Color = "Space Black" }
+                        new ProductVariant("MAC-16-SILVER", "Silver Base", 2499, 10, color: "Silver"),
+                        new ProductVariant("MAC-16-SPACE", "Space Black", 2599, 5, color: "Space Black")
                     },
                     Images = new List<ProductImage>
                     {
@@ -105,7 +105,7 @@ namespace ECommerce.Infrastructure.Persistence
                     Status = ProductStatus.Published,
                     Variants = new List<ProductVariant>
                     {
-                        new ProductVariant { SKU = "IPH-15-TI", VariantName = "Natural Titanium", Price = 999, StockQuantity = 20 }
+                        new ProductVariant("IPH-15-TI", "Natural Titanium", 999, 20)
                     },
                     Images = new List<ProductImage>
                     {

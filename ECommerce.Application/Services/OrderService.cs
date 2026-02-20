@@ -33,10 +33,27 @@ namespace ECommerce.Application.Services
         /// <summary>
         /// Creates a new order for the specified user based on their current shopping cart.
         /// </summary>
-        public async Task<Result<OrderResponse>> CreateOrderAsync(string userId)
+        public async Task<Result<OrderResponse>> CreateOrderAsync(string userId, int shippingAddressId)
         {
             if (string.IsNullOrWhiteSpace(userId))
                 return Result.Failure<OrderResponse>(DomainErrors.User.IdRequired);
+
+            var address = await _unitOfWork.Addresses.GetByIdAsync(shippingAddressId);
+            if (address == null || address.UserId != userId)
+            {
+                _logger.LogWarning("Address {AddressId} not found or for other user during order creation", shippingAddressId);
+                return Result.Failure<OrderResponse>(DomainErrors.Order.ShippingAddressRequired);
+            }
+
+            var shippingAddress = new ShippingAddress
+            {
+                FullName = address.FullName,
+                Phone = address.Phone,
+                Country = address.Country,
+                City = address.City,
+                Street = address.Street,
+                PostalCode = address.PostalCode
+            };
 
             var cart = await _unitOfWork.ShoppingCarts.GetByUserIdAsync(userId);
             if (cart == null || !cart.Items.Any())
@@ -49,19 +66,9 @@ namespace ECommerce.Application.Services
 
             try
             {
-                var order = new Order
-                {
-                    UserId = userId,
-                    OrderNumber = GenerateOrderNumber(),
-                    Status = OrderStatus.Pending,
-                    PaymentStatus = PaymentStatus.Pending,
-                    CreatedAt = DateTime.UtcNow,
-                    OrderItems = new List<OrderItem>()
-                };
+                var order = new Order(userId, GenerateOrderNumber(), shippingAddress);
 
                 ProcessOrderItems(cart.Items, order);
-
-                order.TotalAmount = order.OrderItems.Sum(i => i.ItemTotal);
 
                 await _unitOfWork.Orders.AddAsync(order);
                 _unitOfWork.ShoppingCarts.Delete(cart);
@@ -108,8 +115,7 @@ namespace ECommerce.Application.Services
 
             if (order.UserId != userId)
             {
-                _logger.LogWarning("User {UserId} attempted unauthorized access to order {OrderId} belonging to user {OrderOwnerId}",
-                    userId, id, order.UserId);
+                _logger.LogWarning("User {UserId} attempted unauthorized access to order {OrderId}", userId, id);
                 return Result.Failure<OrderResponse>(DomainErrors.Order.Unauthorized);
             }
 
@@ -140,21 +146,84 @@ namespace ECommerce.Application.Services
                 return Result.Failure<OrderResponse>(DomainErrors.Order.NotFound);
             }
 
-            if (!IsValidStatusTransition(order.Status, status))
+            try
             {
-                _logger.LogWarning("Invalid status transition attempt for order {OrderId} from {CurrentStatus} to {NewStatus}",
-                    id, order.Status, status);
+                order.UpdateStatus(status);
+                _unitOfWork.Orders.Update(order);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Order {OrderId} status changed to {NewStatus}", id, status);
+                return Result.Success(_mapper.Map<OrderResponse>(order)!);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning("Invalid status transition attempt for order {OrderId} to {NewStatus}: {Message}",
+                    id, status, ex.Message);
                 return Result.Failure<OrderResponse>(DomainErrors.Order.InvalidStatusTransition);
             }
+        }
 
-            var previousStatus = order.Status;
-            order.Status = status;
-            _unitOfWork.Orders.Update(order);
-            await _unitOfWork.SaveChangesAsync();
+        /// <summary>
+        /// Cancels an order, ensuring it belongs to the user and is in a cancellable state.
+        /// Restores stock for items in the cancelled order.
+        /// </summary>
+        public async Task<Result<OrderResponse>> CancelOrderAsync(int orderId, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                return Result.Failure<OrderResponse>(DomainErrors.User.IdRequired);
 
-            _logger.LogInformation("Order {OrderId} status changed from {PreviousStatus} to {NewStatus}",
-                id, previousStatus, status);
-            return Result.Success(_mapper.Map<OrderResponse>(order)!);
+            var order = await _unitOfWork.Orders.GetByIdWithDetailsAsync(orderId);
+            if (order == null)
+            {
+                _logger.LogWarning("Order {OrderId} not found for cancellation", orderId);
+                return Result.Failure<OrderResponse>(DomainErrors.Order.NotFound);
+            }
+
+            if (order.UserId != userId)
+            {
+                _logger.LogWarning("User {UserId} unauthorized to cancel order {OrderId}", userId, orderId);
+                return Result.Failure<OrderResponse>(DomainErrors.Order.Unauthorized);
+            }
+
+            try
+            {
+                await _unitOfWork.BeginTransactionAsync();
+
+                order.Cancel();
+
+                foreach (var item in order.OrderItems)
+                {
+                    var variant = await _unitOfWork.ProductVariants.GetByIdAsync(item.ProductVariantId);
+                    if (variant != null)
+                    {
+                        variant.RestoreStock(item.Quantity);
+                        _unitOfWork.ProductVariants.Update(variant);
+                    }
+                }
+
+                _unitOfWork.Orders.Update(order);
+                await _unitOfWork.CommitTransactionAsync();
+
+                _logger.LogInformation("Order {OrderNumber} cancelled by user {UserId}", order.OrderNumber, userId);
+                return Result.Success(_mapper.Map<OrderResponse>(order)!);
+            }
+            catch (InvalidOperationException)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogWarning("Invalid cancellation attempt for order {OrderId} in state {Status}", orderId, order.Status);
+                return Result.Failure<OrderResponse>(DomainErrors.Order.InvalidStatusTransition);
+            }
+            catch (ConcurrencyConflictException)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return Result.Failure<OrderResponse>(DomainErrors.Order.ConcurrencyConflict);
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogError(ex, "Error cancelling order {OrderId} for user {UserId}", orderId, userId);
+                throw;
+            }
         }
 
         /// <summary>
@@ -190,15 +259,7 @@ namespace ECommerce.Application.Services
 
                 _unitOfWork.ProductVariants.Update(variant);
 
-                var orderItem = new OrderItem
-                {
-                    ProductVariantId = cartItem.ProductVariantId,
-                    ProductName = $"{variant.Product.Name} - {variant.SKU}",
-                    UnitPrice = variant.Price,
-                    Quantity = cartItem.Quantity,
-                    ItemTotal = variant.Price * cartItem.Quantity
-                };
-                order.OrderItems.Add(orderItem);
+                order.AddItem(variant, cartItem.Quantity);
             }
         }
 
@@ -207,19 +268,6 @@ namespace ECommerce.Application.Services
             var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             var randomNumber = RandomNumberGenerator.GetInt32(1000, 10000); // Thread-safe & secure
             return $"ORD-{timestamp}-{randomNumber}";
-        }
-
-        private bool IsValidStatusTransition(OrderStatus currentStatus, OrderStatus newStatus)
-        {
-            return currentStatus switch
-            {
-                OrderStatus.Pending => newStatus is OrderStatus.Processing or OrderStatus.Cancelled,
-                OrderStatus.Processing => newStatus is OrderStatus.Shipped or OrderStatus.Cancelled,
-                OrderStatus.Shipped => newStatus is OrderStatus.Delivered,
-                OrderStatus.Delivered => false,
-                OrderStatus.Cancelled => false,
-                _ => false
-            };
         }
     }
 }

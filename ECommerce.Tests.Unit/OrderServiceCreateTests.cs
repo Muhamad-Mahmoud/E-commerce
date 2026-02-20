@@ -18,6 +18,7 @@ namespace ECommerce.Tests.Unit
         private readonly Mock<IShoppingCartRepository> _cartRepoMock;
         private readonly Mock<IProductVariantRepository> _variantRepoMock;
         private readonly Mock<IOrderRepository> _orderRepoMock;
+        private readonly Mock<IAddressRepository> _addressRepoMock;
         private readonly Mock<IMapper> _mapperMock;
         private readonly Mock<ILogger<OrderService>> _loggerMock;
         private readonly OrderService _orderService;
@@ -28,12 +29,14 @@ namespace ECommerce.Tests.Unit
             _cartRepoMock = new Mock<IShoppingCartRepository>();
             _variantRepoMock = new Mock<IProductVariantRepository>();
             _orderRepoMock = new Mock<IOrderRepository>();
+            _addressRepoMock = new Mock<IAddressRepository>();
             _mapperMock = new Mock<IMapper>();
             _loggerMock = new Mock<ILogger<OrderService>>();
 
             _unitOfWorkMock.Setup(u => u.ShoppingCarts).Returns(_cartRepoMock.Object);
             _unitOfWorkMock.Setup(u => u.ProductVariants).Returns(_variantRepoMock.Object);
             _unitOfWorkMock.Setup(u => u.Orders).Returns(_orderRepoMock.Object);
+            _unitOfWorkMock.Setup(u => u.Addresses).Returns(_addressRepoMock.Object);
 
             _orderService = new OrderService(_unitOfWorkMock.Object, _mapperMock.Object, _loggerMock.Object);
         }
@@ -45,7 +48,7 @@ namespace ECommerce.Tests.Unit
         public async Task CreateOrderAsync_ShouldReturnError_WhenUserIdIsInvalid()
         {
             // Act
-            var result = await _orderService.CreateOrderAsync("");
+            var result = await _orderService.CreateOrderAsync("", 1);
 
             // Assert
             result.IsSuccess.Should().BeFalse();
@@ -60,11 +63,15 @@ namespace ECommerce.Tests.Unit
         {
             // Arrange
             var userId = "user-1";
+            var addressId = 1;
+            var address = new Address { Id = addressId, UserId = userId, FullName = "Test User", Phone = "123", Country = "Test", City = "Test" };
             var cart = new ShoppingCart { UserId = userId, Items = new List<ShoppingCartItem>() };
+            
+            _addressRepoMock.Setup(r => r.GetByIdAsync(addressId)).ReturnsAsync(address);
             _cartRepoMock.Setup(r => r.GetByUserIdAsync(userId)).ReturnsAsync(cart);
 
             // Act
-            var result = await _orderService.CreateOrderAsync(userId);
+            var result = await _orderService.CreateOrderAsync(userId, addressId);
 
             // Assert
             result.IsSuccess.Should().BeFalse();
@@ -80,6 +87,8 @@ namespace ECommerce.Tests.Unit
         {
             // Arrange
             var userId = "user-1";
+            var addressId = 1;
+            var address = new Address { Id = addressId, UserId = userId, FullName = "Test User", Phone = "123", Country = "Test", City = "Test" };
             var variant = new ProductVariant
             {
                 Id = 1,
@@ -96,12 +105,13 @@ namespace ECommerce.Tests.Unit
                     new ShoppingCartItem { ProductVariantId = 1, Quantity = 2, ProductVariant = variant }
                 }
             };
+            _addressRepoMock.Setup(r => r.GetByIdAsync(addressId)).ReturnsAsync(address);
             _cartRepoMock.Setup(r => r.GetByUserIdAsync(userId)).ReturnsAsync(cart);
             _mapperMock.Setup(m => m.Map<OrderResponse>(It.IsAny<Order>()))
                 .Returns(new OrderResponse { Id = 1, OrderNumber = "ORD-123", TotalAmount = 200 });
 
             // Act
-            var result = await _orderService.CreateOrderAsync(userId);
+            var result = await _orderService.CreateOrderAsync(userId, addressId);
 
             // Assert
             result.IsSuccess.Should().BeTrue();
@@ -124,6 +134,8 @@ namespace ECommerce.Tests.Unit
         {
             // Arrange
             var userId = "user-1";
+            var addressId = 1;
+            var address = new Address { Id = addressId, UserId = userId, FullName = "Test User", Phone = "123", Country = "Test", City = "Test" };
             var variant = new ProductVariant
             {
                 Id = 1,
@@ -140,10 +152,11 @@ namespace ECommerce.Tests.Unit
                     new ShoppingCartItem { ProductVariantId = 1, Quantity = 2, ProductVariant = variant } // Requesting 2
                 }
             };
+            _addressRepoMock.Setup(r => r.GetByIdAsync(addressId)).ReturnsAsync(address);
             _cartRepoMock.Setup(r => r.GetByUserIdAsync(userId)).ReturnsAsync(cart);
 
             // Act
-            var result = await _orderService.CreateOrderAsync(userId);
+            var result = await _orderService.CreateOrderAsync(userId, addressId);
 
             // Assert
             result.IsSuccess.Should().BeFalse();
@@ -161,6 +174,8 @@ namespace ECommerce.Tests.Unit
         {
             // Arrange
             var userId = "user-1";
+            var addressId = 1;
+            var address = new Address { Id = addressId, UserId = userId, FullName = "Test User", Phone = "123", Country = "Test", City = "Test" };
             var cart = new ShoppingCart
             {
                 UserId = userId,
@@ -170,11 +185,12 @@ namespace ECommerce.Tests.Unit
                 }
             };
 
+            _addressRepoMock.Setup(r => r.GetByIdAsync(addressId)).ReturnsAsync(address);
             _cartRepoMock.Setup(r => r.GetByUserIdAsync(userId)).ReturnsAsync(cart);
             _unitOfWorkMock.Setup(u => u.Orders.AddAsync(It.IsAny<Order>())).ThrowsAsync(new Exception("Database error"));
 
             // Act
-            Func<Task> act = async () => await _orderService.CreateOrderAsync(userId);
+            Func<Task> act = async () => await _orderService.CreateOrderAsync(userId, addressId);
 
             // Assert
             await act.Should().ThrowAsync<Exception>().WithMessage("Database error");

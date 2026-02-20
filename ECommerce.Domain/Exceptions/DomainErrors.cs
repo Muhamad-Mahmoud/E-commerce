@@ -16,6 +16,7 @@ public static class DomainErrors
         public static readonly Error InsufficientStock = new("Order.InsufficientStock", "One or more items in the cart have insufficient stock.", 400);
         public static readonly Error InvalidStatusTransition = new("Order.InvalidStatusTransition", "The order status transition is invalid.", 400);
         public static readonly Error ConcurrencyConflict = new("Order.ConcurrencyConflict", "A concurrency conflict occurred while processing the order. Please try again.", 409);
+        public static readonly Error ShippingAddressRequired = new("Order.ShippingAddressRequired", "A shipping address is required to create an order.", 400);
     }
 
     public static class User

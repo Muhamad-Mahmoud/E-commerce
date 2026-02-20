@@ -44,63 +44,29 @@ namespace ECommerce.Application.Services
         {
             var cart = await GetOrCreateCartAsync(userId);
 
+            var product = await _unitOfWork.Products.GetFirstAsync(
+                p => p.Variants.Any(v => v.Id == dto.ProductVariantId),
+                p => p.Variants);
+
+            if (product == null)
+            {
+                _logger.LogWarning("Product variant {ProductVariantId} not found", dto.ProductVariantId);
+                return Result.Failure<ShoppingCartResponse>(DomainErrors.Cart.VariantNotFound);
+            }
+
+            var variant = product.Variants.First(v => v.Id == dto.ProductVariantId);
             var existingItem = cart.Items.FirstOrDefault(i => i.ProductVariantId == dto.ProductVariantId);
+            var newTotalQuantity = (existingItem?.Quantity ?? 0) + dto.Quantity;
 
-            if (existingItem != null)
+            if (newTotalQuantity > variant.StockQuantity)
             {
-                var existingVariantProduct = await _unitOfWork.Products.GetFirstAsync(
-                    p => p.Variants.Any(v => v.Id == dto.ProductVariantId),
-                    p => p.Variants);
-
-                if (existingVariantProduct != null)
-                {
-                    var variant = existingVariantProduct.Variants.First(v => v.Id == dto.ProductVariantId);
-                    var newTotalQuantity = existingItem.Quantity + dto.Quantity;
-
-                    if (newTotalQuantity > variant.StockQuantity)
-                    {
-                        _logger.LogWarning("Insufficient stock for variant {ProductVariantId}. Requested total: {Total}, Available: {Stock}",
-                            dto.ProductVariantId, newTotalQuantity, variant.StockQuantity);
-                        return Result.Failure<ShoppingCartResponse>(DomainErrors.Cart.InsufficientStock);
-                    }
-                }
-
-                existingItem.Quantity += dto.Quantity;
-                cart.UpdatedAt = DateTime.UtcNow;
-            }
-            else
-            {
-                var product = await _unitOfWork.Products.GetFirstAsync(
-                    p => p.Variants.Any(v => v.Id == dto.ProductVariantId),
-                    p => p.Variants);
-
-                if (product == null)
-                {
-                    _logger.LogWarning("Product variant {ProductVariantId} not found for user {UserId}", dto.ProductVariantId, userId);
-                    return Result.Failure<ShoppingCartResponse>(DomainErrors.Cart.VariantNotFound);
-                }
-
-                var variant = product.Variants.First(v => v.Id == dto.ProductVariantId);
-
-                if (dto.Quantity > variant.StockQuantity)
-                {
-                    _logger.LogWarning("Insufficient stock for variant {ProductVariantId}. Requested: {Qty}, Available: {Stock}",
-                        dto.ProductVariantId, dto.Quantity, variant.StockQuantity);
-                    return Result.Failure<ShoppingCartResponse>(DomainErrors.Cart.InsufficientStock);
-                }
-
-                cart.Items.Add(new ShoppingCartItem
-                {
-                    ProductVariantId = dto.ProductVariantId,
-                    Quantity = dto.Quantity,
-                    UnitPrice = variant.Price
-                });
-                cart.UpdatedAt = DateTime.UtcNow;
-                _logger.LogInformation("Item {ProductVariantId} added to cart for user {UserId}", dto.ProductVariantId, userId);
+                _logger.LogWarning("Insufficient stock for variant {ProductVariantId}", dto.ProductVariantId);
+                return Result.Failure<ShoppingCartResponse>(DomainErrors.Cart.InsufficientStock);
             }
 
+            cart.AddOrUpdateItem(dto.ProductVariantId, dto.Quantity);
+            
             await _unitOfWork.SaveChangesAsync();
-
             return Result.Success(_mapper.Map<ShoppingCartResponse>(cart)!);
         }
 
@@ -118,12 +84,16 @@ namespace ECommerce.Application.Services
                 return Result.Failure<ShoppingCartResponse>(DomainErrors.Cart.ItemNotFound);
             }
 
-            item.Quantity = dto.Quantity;
-            cart.UpdatedAt = DateTime.UtcNow;
-            await _unitOfWork.SaveChangesAsync();
-            _logger.LogInformation("Cart item {CartItemId} updated for user {UserId}", dto.CartItemId, userId);
-
-            return Result.Success(_mapper.Map<ShoppingCartResponse>(cart)!);
+            try 
+            {
+                item.UpdateQuantity(dto.Quantity);
+                await _unitOfWork.SaveChangesAsync();
+                return Result.Success(_mapper.Map<ShoppingCartResponse>(cart)!);
+            }
+            catch (ArgumentException ex)
+            {
+                return Result.Failure<ShoppingCartResponse>(new Error("Cart.InvalidQuantity", ex.Message, 400));
+            }
         }
 
         /// <summary>
@@ -140,11 +110,8 @@ namespace ECommerce.Application.Services
                 return Result.Failure<ShoppingCartResponse>(DomainErrors.Cart.ItemNotFound);
             }
 
-            cart.Items.Remove(item);
-            cart.UpdatedAt = DateTime.UtcNow;
+            cart.RemoveItem(item.ProductVariantId);
             await _unitOfWork.SaveChangesAsync();
-            _logger.LogInformation("Cart item {CartItemId} removed for user {UserId}", cartItemId, userId);
-
             return Result.Success(_mapper.Map<ShoppingCartResponse>(cart)!);
         }
 
@@ -154,10 +121,8 @@ namespace ECommerce.Application.Services
         public async Task<Result> ClearCartAsync(string userId)
         {
             var cart = await GetOrCreateCartAsync(userId);
-            cart.Items.Clear();
-            cart.UpdatedAt = DateTime.UtcNow;
+            cart.Clear();
             await _unitOfWork.SaveChangesAsync();
-            _logger.LogInformation("Cart cleared for user {UserId}", userId);
             return Result.Success();
         }
 
@@ -166,13 +131,7 @@ namespace ECommerce.Application.Services
             var cart = await _unitOfWork.ShoppingCarts.GetByUserIdAsync(userId);
             if (cart == null)
             {
-                cart = new ShoppingCart
-                {
-                    UserId = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    Items = new List<ShoppingCartItem>()
-                };
+                cart = new ShoppingCart(userId);
                 await _unitOfWork.ShoppingCarts.AddAsync(cart);
                 await _unitOfWork.SaveChangesAsync();
                 _logger.LogInformation("New cart created for user {UserId}", userId);

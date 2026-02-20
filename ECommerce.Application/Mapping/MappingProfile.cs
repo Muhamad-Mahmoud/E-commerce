@@ -64,6 +64,8 @@ namespace ECommerce.Application.Mapping
             CreateMap<OrderItem, OrderItemResponse>()
                 .ForMember(dest => dest.ProductSku, opt => opt.MapFrom(src => src.ProductVariant.SKU)); // Assuming ProductVariant might be included or we just leave it null if not loaded
 
+            CreateMap<ShippingAddress, ShippingAddressResponse>();
+
             CreateMap<Order, OrderResponse>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => src.PaymentStatus.ToString()));

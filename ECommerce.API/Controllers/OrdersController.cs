@@ -25,9 +25,9 @@ namespace ECommerce.API.Controllers
         /// Create a new order from the current user's cart.
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<OrderResponse>> CreateOrder()
+        public async Task<ActionResult<OrderResponse>> CreateOrder([FromBody] CreateOrderRequest request)
         {
-            var result = await _orderService.CreateOrderAsync(UserId);
+            var result = await _orderService.CreateOrderAsync(UserId, request.ShippingAddressId);
             
             if (result.IsFailure)
             {
@@ -53,6 +53,15 @@ namespace ECommerce.API.Controllers
         public async Task<ActionResult<OrderResponse>> GetOrderById(int id)
         {
             return HandleResult(await _orderService.GetOrderByIdAsync(id, UserId));
+        }
+
+        /// <summary>
+        /// Cancel an order.
+        /// </summary>
+        [HttpPost("{id}/cancel")]
+        public async Task<ActionResult<OrderResponse>> CancelOrder(int id)
+        {
+            return HandleResult(await _orderService.CancelOrderAsync(id, UserId));
         }
 
         /// <summary>
