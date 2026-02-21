@@ -5,24 +5,20 @@ using ECommerce.Application.Interfaces.Services;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Interfaces;
 using ECommerce.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Application.Services
 {
-    /// <summary>
-    /// Service for managing user addresses.
-    /// </summary>
     public class AddressService : IAddressService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AddressService"/> class.
-        /// </summary>
-        public AddressService(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly ILogger<AddressService> _logger;
+        public AddressService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<AddressService> _logger)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            this._logger = _logger;
         }
 
         /// <summary>
@@ -51,25 +47,39 @@ namespace ECommerce.Application.Services
         /// </summary>
         public async Task<Result<AddressDto>> CreateAsync(string userId, CreateAddressDto request, CancellationToken cancellationToken)
         {
-            var address = _mapper.Map<Address>(request);
-            address.UserId = userId;
-
-            if (address.IsDefaultShipping)
+            try 
             {
-                var existingDefaults = await _unitOfWork.Addresses.FindAsync(
-                    a => a.UserId == userId && a.IsDefaultShipping);
+                var address = _mapper.Map<Address>(request);
+                address.UserId = userId;
 
-                foreach (var addr in existingDefaults)
+                if (address.IsDefaultShipping)
                 {
-                    addr.IsDefaultShipping = false;
-                    _unitOfWork.Addresses.Update(addr);
+                    var existingDefaults = await _unitOfWork.Addresses.FindAsync(
+                        a => a.UserId == userId && a.IsDefaultShipping);
+
+                    foreach (var addr in existingDefaults)
+                    {
+                        addr.IsDefaultShipping = false;
+                        _unitOfWork.Addresses.Update(addr);
+                    }
                 }
+
+                await _unitOfWork.Addresses.AddAsync(address);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation("New address {AddressId} created for user {UserId}", address.Id, userId);
+                return Result.Success(_mapper.Map<AddressDto>(address)!);
             }
-
-            await _unitOfWork.Addresses.AddAsync(address);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return Result.Success(_mapper.Map<AddressDto>(address)!);
+            catch (ConcurrencyConflictException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict during address creation for user {UserId}", userId);
+                return Result.Failure<AddressDto>(DomainErrors.Order.ConcurrencyConflict); // Reusing Order concurrency error as it's generic enough or should have Address.ConcurrencyConflict
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating address for user {UserId}", userId);
+                return Result.Failure<AddressDto>(DomainErrors.General.ServerError);
+            }
         }
 
         /// <summary>
@@ -79,12 +89,29 @@ namespace ECommerce.Application.Services
         {
             var address = await _unitOfWork.Addresses.GetFirstAsync(a => a.Id == id && a.UserId == userId);
             if (address == null)
+            {
+                _logger.LogWarning("Address {AddressId} not found for deletion by user {UserId}", id, userId);
                 return Result.Failure(DomainErrors.Address.NotFound);
+            }
 
-            _unitOfWork.Addresses.Delete(address);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            try 
+            {
+                _unitOfWork.Addresses.Delete(address);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result.Success();
+                _logger.LogInformation("Address {AddressId} deleted for user {UserId}", id, userId);
+                return Result.Success();
+            }
+            catch (ConcurrencyConflictException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict during address deletion for user {UserId}, address {AddressId}", userId, id);
+                return Result.Failure(DomainErrors.Order.ConcurrencyConflict);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting address {AddressId} for user {UserId}", id, userId);
+                return Result.Failure(DomainErrors.General.ServerError);
+            }
         }
     }
 }

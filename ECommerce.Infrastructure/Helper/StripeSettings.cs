@@ -4,5 +4,6 @@ namespace ECommerce.Infrastructure.Helper
     {
         public string? Publishablekey { get; set; }
         public string? Secretkey { get; set; }
+        public string? WebhookSecret { get; set; }
     }
 }

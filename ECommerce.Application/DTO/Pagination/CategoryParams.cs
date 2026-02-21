@@ -1,8 +1,5 @@
 namespace ECommerce.Application.DTO.Pagination
 {
-    /// <summary>
-    /// Parameters for category queries with pagination and filtering.
-    /// </summary>
     public class CategoryParams
     {
         public string? Search { get; set; }

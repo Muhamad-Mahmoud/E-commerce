@@ -12,7 +12,7 @@ namespace ECommerce.Application.Interfaces.Services
 
         Task<Result<OrderResponse>> GetOrderByIdAsync(int id, string userId);
 
-        Task<Result<IEnumerable<OrderResponse>>> GetUserOrdersAsync(string userId);
+        Task<Result<PagedResult<OrderResponse>>> GetUserOrdersAsync(string userId, OrderParams orderParams);
 
         Task<Result<OrderResponse>> UpdateOrderStatusAsync(int id, OrderStatus status);
 

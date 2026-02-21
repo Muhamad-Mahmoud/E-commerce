@@ -38,12 +38,12 @@ namespace ECommerce.API.Controllers
         }
 
         /// <summary>
-        /// Get all orders for the current user.
+        /// Get all orders for the current user with pagination and optional filtering.
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<OrderResponse>>> GetUserOrders()
+        public async Task<ActionResult<PagedResult<OrderResponse>>> GetUserOrders([FromQuery] OrderParams orderParams)
         {
-            return HandleResult(await _orderService.GetUserOrdersAsync(UserId));
+            return HandleResult(await _orderService.GetUserOrdersAsync(UserId, orderParams));
         }
 
         /// <summary>

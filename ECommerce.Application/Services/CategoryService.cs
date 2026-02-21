@@ -1,4 +1,5 @@
 using ECommerce.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
 using AutoMapper;
 using ECommerce.Application.DTO.Categories.Requests;
 using ECommerce.Application.DTO.Categories.Responses;
@@ -16,14 +17,16 @@ namespace ECommerce.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ILogger<CategoryService> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CategoryService"/> class.
         /// </summary>
-        public CategoryService(IUnitOfWork unitOfWork, IMapper mapper)
+        public CategoryService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<CategoryService> logger)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _logger = logger;
         }
 
         /// <summary>
@@ -67,18 +70,28 @@ namespace ECommerce.Application.Services
         /// </summary>
         public async Task<Result<CategoryResponse>> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken)
         {
-            var category = _mapper.Map<Category>(request);
+            try 
+            {
+                var category = _mapper.Map<Category>(request);
 
-            await _unitOfWork.Categories.AddAsync(category);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.Categories.AddAsync(category);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            //  Reload with ParentCategory after save
-            var savedCategory = await _unitOfWork.Categories.GetByIdAsync(
-                category.Id,
-                c => c.ParentCategory
-            );
+                _logger.LogInformation("New category {CategoryId} created: {CategoryName}", category.Id, category.Name);
 
-            return Result.Success(_mapper.Map<CategoryResponse>(savedCategory ?? category)!);
+                //  Reload with ParentCategory after save
+                var savedCategory = await _unitOfWork.Categories.GetByIdAsync(
+                    category.Id,
+                    c => c.ParentCategory
+                );
+
+                return Result.Success(_mapper.Map<CategoryResponse>(savedCategory ?? category)!);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating category {CategoryName}", request.Name);
+                return Result.Failure<CategoryResponse>(DomainErrors.General.ServerError);
+            }
         }
 
         /// <summary>
@@ -91,15 +104,33 @@ namespace ECommerce.Application.Services
                 c => c.ParentCategory
             );
 
-            if (category == null) return Result.Failure(DomainErrors.Category.NotFound);
+            if (category == null) 
+            {
+                _logger.LogWarning("Category {CategoryId} not found for update", request.Id);
+                return Result.Failure(DomainErrors.Category.NotFound);
+            }
 
-            // Use Mapper to update existing entity
-            _mapper.Map(request, category);
+            try 
+            {
+                // Use Mapper to update existing entity
+                _mapper.Map(request, category);
 
-            _unitOfWork.Categories.Update(category);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+                _unitOfWork.Categories.Update(category);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result.Success();
+                _logger.LogInformation("Category {CategoryId} updated successfully", request.Id);
+                return Result.Success();
+            }
+            catch (ConcurrencyConflictException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict during category update for ID {CategoryId}", request.Id);
+                return Result.Failure(DomainErrors.General.ConcurrencyConflict);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating category {CategoryId}", request.Id);
+                return Result.Failure(DomainErrors.General.ServerError);
+            }
         }
 
         /// <summary>
@@ -108,12 +139,30 @@ namespace ECommerce.Application.Services
         public async Task<Result> DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var category = await _unitOfWork.Categories.GetByIdAsync(id);
-            if (category == null) return Result.Failure(DomainErrors.Category.NotFound);
+            if (category == null) 
+            {
+                _logger.LogWarning("Category {CategoryId} not found for deletion", id);
+                return Result.Failure(DomainErrors.Category.NotFound);
+            }
 
-            _unitOfWork.Categories.Delete(category);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            try 
+            {
+                _unitOfWork.Categories.Delete(category);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result.Success();
+                _logger.LogInformation("Category {CategoryId} deleted successfully", id);
+                return Result.Success();
+            }
+            catch (ConcurrencyConflictException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict during category deletion for ID {CategoryId}", id);
+                return Result.Failure(DomainErrors.General.ConcurrencyConflict);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting category {CategoryId}", id);
+                return Result.Failure(DomainErrors.General.ServerError);
+            }
         }
     }
 }

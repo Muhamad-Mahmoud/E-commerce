@@ -94,7 +94,7 @@ namespace ECommerce.Application.Services
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogError(ex, "Error creating order for user {UserId}. Transaction rolled back.", userId);
-                throw;
+                return Result.Failure<OrderResponse>(DomainErrors.General.ServerError);
             }
         }
 
@@ -123,15 +123,14 @@ namespace ECommerce.Application.Services
         }
 
         /// <summary>
-        /// Gets all orders for a specific user.
+        /// Gets all orders for a specific user with pagination support.
         /// </summary>
-        public async Task<Result<IEnumerable<OrderResponse>>> GetUserOrdersAsync(string userId)
+        public async Task<Result<PagedResult<OrderResponse>>> GetUserOrdersAsync(string userId, OrderParams orderParams)
         {
             if (string.IsNullOrWhiteSpace(userId))
-                return Result.Failure<IEnumerable<OrderResponse>>(DomainErrors.User.IdRequired);
+                return Result.Failure<PagedResult<OrderResponse>>(DomainErrors.User.IdRequired);
 
-            var orders = await _unitOfWork.Orders.GetUserOrdersAsync(userId);
-            return Result.Success(_mapper.Map<IEnumerable<OrderResponse>>(orders) ?? Enumerable.Empty<OrderResponse>());
+            return await SearchOrdersAsync(orderParams, userId);
         }
 
         /// <summary>
@@ -222,7 +221,7 @@ namespace ECommerce.Application.Services
             {
                 await _unitOfWork.RollbackTransactionAsync();
                 _logger.LogError(ex, "Error cancelling order {OrderId} for user {UserId}", orderId, userId);
-                throw;
+                return Result.Failure<OrderResponse>(DomainErrors.General.ServerError);
             }
         }
 

@@ -6,6 +6,8 @@ public static class DomainErrors
     {
         public static readonly Error IdMismatch = new("General.IdMismatch", "The ID in the URL does not match the ID in the request body.", 400);
         public static readonly Error UnAuthorized = Error.Unauthorized("You are not authorized to perform this action.");
+        public static readonly Error ConcurrencyConflict = new("General.ConcurrencyConflict", "A concurrency conflict occurred. The data has been modified by another process. Please reload and try again.", 409);
+        public static readonly Error ServerError = new("General.ServerError", "An unexpected error occurred. Please try again later.", 500);
     }
 
     public static class Order

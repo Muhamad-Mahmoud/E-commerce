@@ -33,8 +33,10 @@ namespace ECommerce.Application.Services
         /// </summary>
         public async Task<Result<ShoppingCartResponse>> GetCartAsync(string userId)
         {
-            var cart = await GetOrCreateCartAsync(userId);
-            return Result.Success(_mapper.Map<ShoppingCartResponse>(cart)!);
+            var result = await GetOrCreateCartAsync(userId);
+            if (result.IsFailure) return Result.Failure<ShoppingCartResponse>(result.Error);
+
+            return Result.Success(_mapper.Map<ShoppingCartResponse>(result.Value)!);
         }
 
         /// <summary>
@@ -42,7 +44,10 @@ namespace ECommerce.Application.Services
         /// </summary>
         public async Task<Result<ShoppingCartResponse>> AddItemAsync(string userId, AddToCartRequest dto)
         {
-            var cart = await GetOrCreateCartAsync(userId);
+            var result = await GetOrCreateCartAsync(userId);
+            if (result.IsFailure) return Result.Failure<ShoppingCartResponse>(result.Error);
+
+            var cart = result.Value;
 
             var product = await _unitOfWork.Products.GetFirstAsync(
                 p => p.Variants.Any(v => v.Id == dto.ProductVariantId),
@@ -64,10 +69,24 @@ namespace ECommerce.Application.Services
                 return Result.Failure<ShoppingCartResponse>(DomainErrors.Cart.InsufficientStock);
             }
 
-            cart.AddOrUpdateItem(dto.ProductVariantId, dto.Quantity);
-            
-            await _unitOfWork.SaveChangesAsync();
-            return Result.Success(_mapper.Map<ShoppingCartResponse>(cart)!);
+            try 
+            {
+                cart.AddOrUpdateItem(dto.ProductVariantId, dto.Quantity);
+                await _unitOfWork.SaveChangesAsync();
+                
+                _logger.LogInformation("Item {ProductVariantId} added/updated in cart for user {UserId}", dto.ProductVariantId, userId);
+                return Result.Success(_mapper.Map<ShoppingCartResponse>(cart)!);
+            }
+            catch (ConcurrencyConflictException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict adding item to cart for user {UserId}", userId);
+                return Result.Failure<ShoppingCartResponse>(DomainErrors.General.ConcurrencyConflict);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding item {ProductVariantId} to cart for user {UserId}", dto.ProductVariantId, userId);
+                return Result.Failure<ShoppingCartResponse>(DomainErrors.General.ServerError);
+            }
         }
 
         /// <summary>
@@ -75,7 +94,10 @@ namespace ECommerce.Application.Services
         /// </summary>
         public async Task<Result<ShoppingCartResponse>> UpdateItemAsync(string userId, UpdateCartItemRequest dto)
         {
-            var cart = await GetOrCreateCartAsync(userId);
+            var result = await GetOrCreateCartAsync(userId);
+            if (result.IsFailure) return Result.Failure<ShoppingCartResponse>(result.Error);
+
+            var cart = result.Value;
             var item = cart.Items.FirstOrDefault(i => i.Id == dto.CartItemId);
 
             if (item == null)
@@ -84,15 +106,34 @@ namespace ECommerce.Application.Services
                 return Result.Failure<ShoppingCartResponse>(DomainErrors.Cart.ItemNotFound);
             }
 
+            // Stock Validation
+            if (dto.Quantity > item.ProductVariant.StockQuantity)
+            {
+                _logger.LogWarning("Insufficient stock for variant {ProductVariantId}. Requested: {Quantity}, Available: {StockQuantity}", 
+                    item.ProductVariantId, dto.Quantity, item.ProductVariant.StockQuantity);
+                return Result.Failure<ShoppingCartResponse>(DomainErrors.Cart.InsufficientStock);
+            }
+
             try 
             {
                 item.UpdateQuantity(dto.Quantity);
                 await _unitOfWork.SaveChangesAsync();
+                _logger.LogInformation("Cart item {CartItemId} quantity updated to {Quantity} for user {UserId}", dto.CartItemId, dto.Quantity, userId);
                 return Result.Success(_mapper.Map<ShoppingCartResponse>(cart)!);
             }
             catch (ArgumentException ex)
             {
                 return Result.Failure<ShoppingCartResponse>(new Error("Cart.InvalidQuantity", ex.Message, 400));
+            }
+            catch (ConcurrencyConflictException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict updating cart item {CartItemId} for user {UserId}", dto.CartItemId, userId);
+                return Result.Failure<ShoppingCartResponse>(DomainErrors.General.ConcurrencyConflict);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating cart item {CartItemId} for user {UserId}", dto.CartItemId, userId);
+                return Result.Failure<ShoppingCartResponse>(DomainErrors.General.ServerError);
             }
         }
 
@@ -101,7 +142,10 @@ namespace ECommerce.Application.Services
         /// </summary>
         public async Task<Result<ShoppingCartResponse>> RemoveItemAsync(string userId, int cartItemId)
         {
-            var cart = await GetOrCreateCartAsync(userId);
+            var result = await GetOrCreateCartAsync(userId);
+            if (result.IsFailure) return Result.Failure<ShoppingCartResponse>(result.Error);
+
+            var cart = result.Value;
             var item = cart.Items.FirstOrDefault(i => i.Id == cartItemId);
 
             if (item == null)
@@ -110,9 +154,23 @@ namespace ECommerce.Application.Services
                 return Result.Failure<ShoppingCartResponse>(DomainErrors.Cart.ItemNotFound);
             }
 
-            cart.RemoveItem(item.ProductVariantId);
-            await _unitOfWork.SaveChangesAsync();
-            return Result.Success(_mapper.Map<ShoppingCartResponse>(cart)!);
+            try 
+            {
+                cart.RemoveItem(item.ProductVariantId);
+                await _unitOfWork.SaveChangesAsync();
+                _logger.LogInformation("Item {ProductVariantId} removed from cart for user {UserId}", item.ProductVariantId, userId);
+                return Result.Success(_mapper.Map<ShoppingCartResponse>(cart)!);
+            }
+            catch (ConcurrencyConflictException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict removing cart item {CartItemId} for user {UserId}", cartItemId, userId);
+                return Result.Failure<ShoppingCartResponse>(DomainErrors.General.ConcurrencyConflict);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing cart item {CartItemId} for user {UserId}", cartItemId, userId);
+                return Result.Failure<ShoppingCartResponse>(DomainErrors.General.ServerError);
+            }
         }
 
         /// <summary>
@@ -120,23 +178,58 @@ namespace ECommerce.Application.Services
         /// </summary>
         public async Task<Result> ClearCartAsync(string userId)
         {
-            var cart = await GetOrCreateCartAsync(userId);
-            cart.Clear();
-            await _unitOfWork.SaveChangesAsync();
-            return Result.Success();
+            var result = await GetOrCreateCartAsync(userId);
+            if (result.IsFailure) return result;
+
+            var cart = result.Value;
+            try 
+            {
+                cart.Clear();
+                await _unitOfWork.SaveChangesAsync();
+                _logger.LogInformation("Cart cleared for user {UserId}", userId);
+                return Result.Success();
+            }
+            catch (ConcurrencyConflictException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict clearing cart for user {UserId}", userId);
+                return Result.Failure(DomainErrors.General.ConcurrencyConflict);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error clearing cart for user {UserId}", userId);
+                return Result.Failure(DomainErrors.General.ServerError);
+            }
         }
 
-        private async Task<ShoppingCart> GetOrCreateCartAsync(string userId)
+        private async Task<Result<ShoppingCart>> GetOrCreateCartAsync(string userId)
         {
             var cart = await _unitOfWork.ShoppingCarts.GetByUserIdAsync(userId);
             if (cart == null)
             {
-                cart = new ShoppingCart(userId);
-                await _unitOfWork.ShoppingCarts.AddAsync(cart);
-                await _unitOfWork.SaveChangesAsync();
-                _logger.LogInformation("New cart created for user {UserId}", userId);
+                try 
+                {
+                    cart = new ShoppingCart(userId);
+                    await _unitOfWork.ShoppingCarts.AddAsync(cart);
+                    await _unitOfWork.SaveChangesAsync();
+                    _logger.LogInformation("New cart created for user {UserId}", userId);
+                }
+                catch (ConcurrencyConflictException)
+                {
+                    // If someone else created it simultaneously, just reload
+                    cart = await _unitOfWork.ShoppingCarts.GetByUserIdAsync(userId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error creating cart for user {UserId}", userId);
+                    return Result.Failure<ShoppingCart>(DomainErrors.General.ServerError);
+                }
+
+                cart ??= await _unitOfWork.ShoppingCarts.GetByUserIdAsync(userId);
             }
-            return cart;
+
+            return cart != null 
+                ? Result.Success(cart) 
+                : Result.Failure<ShoppingCart>(DomainErrors.General.ServerError);
         }
     }
 }

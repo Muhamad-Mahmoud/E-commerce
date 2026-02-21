@@ -4,24 +4,21 @@ using ECommerce.Application.Interfaces.Services;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Interfaces;
 using ECommerce.Domain.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace ECommerce.Application.Services
 {
-    /// <summary>
-    /// Service for managing product reviews.
-    /// </summary>
     public class ReviewService : IReviewService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ILogger<ReviewService> _logger;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ReviewService"/> class.
-        /// </summary>
-        public ReviewService(IUnitOfWork unitOfWork, IMapper mapper)
+        public ReviewService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<ReviewService> logger)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _logger = logger;
         }
 
         /// <summary>
@@ -31,29 +28,49 @@ namespace ECommerce.Application.Services
         {
             var product = await _unitOfWork.Products.GetByIdAsync(createReviewDto.ProductId);
             if (product == null)
+            {
+                _logger.LogWarning("Product {ProductId} not found for review by user {UserId}", createReviewDto.ProductId, userId);
                 return Result.Failure<ReviewDto>(DomainErrors.Review.ProductNotFound);
+            }
 
             var existingReview = await _unitOfWork.Reviews.GetFirstAsync(
                 r => r.ProductId == createReviewDto.ProductId && r.UserId == userId);
 
             if (existingReview != null)
-                return Result.Failure<ReviewDto>(DomainErrors.Review.DuplicateReview);
-
-            var review = new Review
             {
-                ProductId = createReviewDto.ProductId,
-                UserId = userId,
-                Rating = createReviewDto.Rating,
-                Comment = createReviewDto.Comment,
-                Title = createReviewDto.Title,
-                CreatedAt = DateTime.UtcNow,
-                IsApproved = false
-            };
+                _logger.LogWarning("User {UserId} attempted to add duplicate review for product {ProductId}", userId, createReviewDto.ProductId);
+                return Result.Failure<ReviewDto>(DomainErrors.Review.DuplicateReview);
+            }
 
-            await _unitOfWork.Reviews.AddAsync(review);
-            await _unitOfWork.SaveChangesAsync();
+            try 
+            {
+                var review = new Review
+                {
+                    ProductId = createReviewDto.ProductId,
+                    UserId = userId,
+                    Rating = createReviewDto.Rating,
+                    Comment = createReviewDto.Comment,
+                    Title = createReviewDto.Title,
+                    CreatedAt = DateTime.UtcNow,
+                    IsApproved = false
+                };
 
-            return Result.Success(_mapper.Map<ReviewDto>(review)!);
+                await _unitOfWork.Reviews.AddAsync(review);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("New review {ReviewId} added for product {ProductId} by user {UserId}", review.Id, createReviewDto.ProductId, userId);
+                return Result.Success(_mapper.Map<ReviewDto>(review)!);
+            }
+            catch (ConcurrencyConflictException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict adding review for product {ProductId} by user {UserId}", createReviewDto.ProductId, userId);
+                return Result.Failure<ReviewDto>(DomainErrors.General.ConcurrencyConflict);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding review for product {ProductId} by user {UserId}", createReviewDto.ProductId, userId);
+                return Result.Failure<ReviewDto>(DomainErrors.General.ServerError);
+            }
         }
 
         /// <summary>
@@ -81,15 +98,35 @@ namespace ECommerce.Application.Services
         {
             var review = await _unitOfWork.Reviews.GetByIdAsync(reviewId);
             if (review == null)
+            {
+                _logger.LogWarning("Review {ReviewId} not found for deletion by user {UserId}", reviewId, userId);
                 return Result.Failure(DomainErrors.Review.NotFound);
+            }
 
             if (review.UserId != userId)
+            {
+                _logger.LogWarning("User {UserId} attempted unauthorized deletion of review {ReviewId}", userId, reviewId);
                 return Result.Failure(DomainErrors.Review.Unauthorized);
+            }
 
-            _unitOfWork.Reviews.Delete(review);
-            await _unitOfWork.SaveChangesAsync();
+            try 
+            {
+                _unitOfWork.Reviews.Delete(review);
+                await _unitOfWork.SaveChangesAsync();
 
-            return Result.Success();
+                _logger.LogInformation("Review {ReviewId} deleted by user {UserId}", reviewId, userId);
+                return Result.Success();
+            }
+            catch (ConcurrencyConflictException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict deleting review {ReviewId} by user {UserId}", reviewId, userId);
+                return Result.Failure(DomainErrors.General.ConcurrencyConflict);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting review {ReviewId} by user {UserId}", reviewId, userId);
+                return Result.Failure(DomainErrors.General.ServerError);
+            }
         }
     }
 }

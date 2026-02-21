@@ -1,8 +1,5 @@
 namespace ECommerce.Application.DTO.Orders.Responses
 {
-    /// <summary>
-    /// Response DTO for shipping address details.
-    /// </summary>
     public class ShippingAddressResponse
     {
         public string FullName { get; set; } = string.Empty;
