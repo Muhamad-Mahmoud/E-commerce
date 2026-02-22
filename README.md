@@ -1,76 +1,97 @@
-﻿# 🛍️ E-Commerce REST API
+﻿<div align="center">
 
-A **production-grade E-Commerce REST API** built with **ASP.NET Core (.NET 9)** following **Clean Architecture** principles.  
-Designed with a strong emphasis on **robust error handling**, **concurrency safety**, and **testability**.
+# 🛍️ E-Commerce REST API
+
+### A Production-Grade E-Commerce Backend
+
+**Built with ASP.NET Core (.NET 9) · Clean Architecture · Result Pattern**
+
+<br/>
+
+[![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![EF Core](https://img.shields.io/badge/EF_Core-9.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://learn.microsoft.com/en-us/ef/core/)
+[![SQL Server](https://img.shields.io/badge/SQL_Server-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)](https://www.microsoft.com/en-us/sql-server)
+[![Stripe](https://img.shields.io/badge/Stripe-008CDD?style=for-the-badge&logo=stripe&logoColor=white)](https://stripe.com/)
+[![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](https://swagger.io/)
+[![xUnit](https://img.shields.io/badge/xUnit-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://xunit.net/)
+
+<br/>
+
+[Key Highlights](#-key-highlights) · [Features](#-features) · [Architecture](#-architecture) · [Getting Started](#️-getting-started) · [API Reference](#-api-reference)
 
 ---
 
-## 🚀 Overview
+*A scalable and maintainable e-commerce backend covering the **full flow** — from authentication*
+*and cart management to order creation and Stripe payment processing.*
 
-This project demonstrates how to build a scalable, maintainable, and resilient backend for an e-commerce system — covering the full flow from authentication and shopping cart management to order creation and payment processing.
+</div>
 
----
+<br/>
 
 ## ⭐ Key Highlights
 
-### 🧱 Result Pattern — Zero Exception-Based Control Flow
+<table>
+<tr>
+<td width="50%">
 
-All service methods return `Result<T>` or `Result` instead of throwing exceptions. This enforces **explicit, typed error handling** across the entire application.
+### 🧱 Result Pattern
+All service methods return `Result<T>` instead of throwing exceptions — enforcing **explicit, typed error handling** across the entire codebase. All error codes and messages live in a centralized `DomainErrors` class — no magic strings.
 
-- **No hidden exceptions** — every failure is visible in the return type
-- **Centralized error-to-HTTP mapping** — `NotFound` → 404, `Unauthorized` → 403, fallback → 400
-- **All error codes and messages** live in `DomainErrors.cs` — no magic strings scattered across the codebase
+</td>
+<td width="50%">
 
----
+### 🔒 Concurrency Control
+**Optimistic concurrency** via EF Core `RowVersion` tokens on critical entities like `ProductVariant` and `Order` — preventing race conditions, double-booking, and overselling with automatic rollback.
 
-### 🔒 Optimistic Concurrency Control
+</td>
+</tr>
+<tr>
+<td width="50%">
 
-The system uses **EF Core's `RowVersion`** (optimistic concurrency tokens) on critical entities (`ProductVariant`, `Order`) to prevent race conditions like double-booking or overselling.
+### 🧪 Comprehensive Testing
+4 test suites covering the most complex service with **xUnit + Moq + FluentAssertions** — including **parallel race condition simulation**.
 
-**How it works in practice:**
-1. Two users add the last item to their carts and checkout simultaneously
-2. The first `CommitTransactionAsync()` succeeds
-3. The second detects a `RowVersion` mismatch → `ConcurrencyConflictException`
-4. The service catches it, **rolls back the transaction**, and returns `Result.Failure` — no data corruption
+</td>
+<td width="50%">
 
----
+### 🏛️ Clean Architecture
+Strict 4-layer separation with enforced dependency rule — inner layers know nothing about outer layers. Controllers act as thin pass-throughs with zero business logic.
 
-### 🧪 Unit Tests with xUnit + Moq + FluentAssertions
+</td>
+</tr>
+</table>
 
-The `OrderService` — the most complex service — is covered by **4 comprehensive test suites**:
+<br/>
 
-| Test Suite | Scenarios Covered |
-|---|---|
-| `OrderServiceCreateTests` | Empty cart, invalid user, insufficient stock, successful order, generic exception rollback |
-| `OrderServiceGetTests` | Order not found, unauthorized access, successful retrieval |
-| `OrderServiceUpdateTests` | Invalid status transitions, non-existent order, successful update |
-| `OrderServiceConcurrencyTests` | `ConcurrencyConflictException` handling, **parallel race condition simulation** |
+## 🏗️ Architecture
 
-The concurrency tests simulate real-world scenarios where two users attempt to place orders simultaneously, verifying that exactly one succeeds and the other receives a typed failure result.
+The solution follows **Clean Architecture** with a strict dependency rule:
 
----
+| Layer | Responsibility |
+|:--|:--|
+| **ECommerce.Domain** | Entities · Enums · Errors · Result/Error · Exceptions |
+| **ECommerce.Application** | DTOs · Service Interfaces & Implementations |
+| **ECommerce.Infrastructure** | EF Core · Repositories · UoW · Stripe · Identity |
+| **ECommerce.API** | Controllers · Middleware · Configuration |
+| **ECommerce.Tests.Unit** | xUnit · Moq · FluentAssertions |
 
-### 🏛️ Clean Architecture (4-Layer)
+> **Dependency Rule:** `API → Application → Domain ← Infrastructure`
 
-The solution follows strict Clean Architecture with an enforced **dependency rule** — inner layers know nothing about outer layers:
+<br/>
 
-- **Domain** → Entities, Enums, Errors, Shared (`Result`/`Error`), Exceptions
-- **Application** → DTOs, Interfaces (Services + Repositories), Service implementations
-- **Infrastructure** → EF Core, Repository implementations, UnitOfWork, Stripe, Identity
-- **API** → Controllers, Middleware, Configuration
-- **Tests.Unit** → xUnit tests with Moq + FluentAssertions
-
----
-
-## ✨ Implemented Features
+## ✨ Features
 
 ### 🔐 Authentication & Authorization
-- JWT-based authentication with access + refresh tokens
-- Role-based authorization (`Admin` / `User`)
-- Secure user management with ASP.NET Core Identity
-- Token refresh mechanism for seamless session continuity
+
+| Feature | Details |
+|:--|:--|
+| JWT Authentication | Access token + Refresh token pair |
+| Role-Based Access | `Admin` and `User` roles |
+| Identity Provider | ASP.NET Core Identity |
+| Session Continuity | Automatic token refresh mechanism |
 
 ### 🛒 Shopping Cart
+
 - Add, update, and remove cart items
 - **Stock validation on add** — prevents adding more items than available inventory
 - Cart persistence per authenticated user
@@ -78,137 +99,144 @@ The solution follows strict Clean Architecture with an enforced **dependency rul
 - Product variant support (size, color, SKU)
 
 ### 📦 Products & Categories
+
 - Product listing with **pagination, filtering, and sorting**
-- Full CRUD for products and categories (Admin only)
+- Full CRUD for products and categories *(Admin only)*
 - Product variants with individual SKU, price, and stock tracking
 - Product image management
 
-### ⭐ Reviews & Ratings
-- Users can submit 1–5 star reviews with title and comment
-- **Duplicate review prevention** — one review per user per product
-- Reviews require **admin approval** before becoming visible (`IsApproved = false` by default)
-- Average rating calculation per product
-- Review ownership enforcement (only the author can delete their review)
-
 ### 📋 Orders
-- Order creation **directly from the shopping cart** with atomic stock deduction
-- **Transactional order processing** with explicit `BEGIN → COMMIT / ROLLBACK`
-- Order status lifecycle: `Pending → Processing → Shipped → Delivered`
-- **Invalid status transition prevention** (e.g., can't go from `Delivered` back to `Processing`)
-- Order history and search with pagination
+
+- Order creation **directly from cart** with atomic stock deduction
+- **Transactional processing** — explicit `BEGIN → COMMIT / ROLLBACK`
+- Status lifecycle: `Pending` → `Processing` → `Shipped` → `Delivered`
+- **Invalid status transition prevention** (e.g., can't go from `Delivered` → `Processing`)
+- Order cancellation with **automatic stock restoration**
+- Order history & search with pagination
 - Admin-only status updates
 
+### ⭐ Reviews & Ratings
+
+- 1–5 star reviews with title and comment
+- **Duplicate review prevention** — one review per user per product
+- **Admin approval** required before visibility (`IsApproved = false` by default)
+- Average rating calculation per product
+- Review ownership enforcement (only author can delete)
+
 ### 💗 Wishlist
+
 - Save products for later
-- Duplicate item prevention (silently ignores if already in wishlist)
+- Duplicate item prevention (silently ignores if already exists)
 - Clear entire wishlist
 - Explicit error when removing a product not in the wishlist
 
 ### 📍 Addresses
+
 - Full CRUD for user addresses
-- **Default shipping address management** — setting a new default automatically unsets the previous one
+- **Default address management** — setting a new default auto-unsets the previous one
 - Address ownership enforcement
 
 ### 💳 Payments (Stripe)
-- Stripe Checkout integration (Test Mode)
-- Dedicated Payments API (separated from Orders)
-- Secure checkout session creation
-- Frontend-ready design (API returns checkout URL)
 
----
+- Stripe Checkout integration *(Test Mode)*
+- Dedicated Payments API *(separated from Orders)*
+- Webhook support for payment fulfillment
+- Secure checkout session creation
+- Frontend-ready design — API returns checkout URL
+
+<br/>
 
 ## 🧩 Cross-Cutting Concerns
 
 | Concern | Implementation |
-|---|---|
-| **Error Handling** | `Result<T>` / `Result` pattern + centralized `DomainErrors` |
-| **Concurrency** | Optimistic concurrency via `RowVersion` on `ProductVariant` and `Order` |
-| **Transactions** | Explicit `IUnitOfWork` with `Begin/Commit/Rollback` |
+|:--|:--|
+| **Error Handling** | `Result<T>` pattern + centralized `DomainErrors` |
+| **Concurrency** | Optimistic concurrency via `RowVersion` on critical entities |
+| **Transactions** | Explicit `IUnitOfWork` with `Begin` / `Commit` / `Rollback` |
 | **Logging** | Structured logging with **Serilog** |
 | **Data Access** | Repository + Unit of Work patterns |
 | **Mapping** | AutoMapper for Entity ↔ DTO transformations |
 | **API Docs** | Swagger / OpenAPI with XML comments |
 
----
+<br/>
 
-## 🛠️ Technology Stack
+## 🧪 Unit Tests
 
-| Layer | Technologies |
-|---|---|
+The `OrderService` — the most complex service — is covered by **4 comprehensive test suites**:
+
+| Test Suite | Scenarios |
+|:--|:--|
+| **CreateTests** | Empty cart · Invalid user · Insufficient stock · Successful order · Generic exception rollback |
+| **GetTests** | Order not found · Unauthorized access · Successful retrieval |
+| **UpdateTests** | Invalid status transitions · Non-existent order · Successful update |
+| **ConcurrencyTests** | Concurrency exception handling · **Parallel race condition simulation** |
+
+> The concurrency tests simulate real-world scenarios where two users attempt to place orders simultaneously, verifying that exactly one succeeds and the other receives a typed failure result.
+
+<br/>
+
+## 🛠️ Tech Stack
+
+| Category | Technology |
+|:--|:--|
 | **Runtime** | ASP.NET Core Web API (.NET 9) |
-| **ORM** | Entity Framework Core |
+| **ORM** | Entity Framework Core 9 |
 | **Database** | SQL Server |
-| **Identity** | ASP.NET Core Identity + JWT |
-| **Payments** | Stripe API (Test Mode) |
+| **Auth** | ASP.NET Core Identity + JWT Bearer |
+| **Payments** | Stripe API (Checkout + Webhooks) |
 | **Logging** | Serilog |
 | **Mapping** | AutoMapper |
-| **Testing** | xUnit, Moq, FluentAssertions |
+| **Testing** | xUnit · Moq · FluentAssertions |
 | **Docs** | Swagger / OpenAPI |
 
----
+<br/>
 
 ## ▶️ Getting Started
 
 ### Prerequisites
 
-- .NET 9 SDK
-- SQL Server
+- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
 - Visual Studio 2022 or VS Code
 
-### Run the Project
+### Setup
 
 1. Clone the repository
 2. Run `dotnet restore`
-3. Apply migrations with `dotnet ef database update --project ECommerce.Infrastructure`
-4. Start the API with `dotnet run --project ECommerce.API`
-5. Open Swagger UI at `https://localhost:7000/swagger`
+3. Apply migrations: `dotnet ef database update --project ECommerce.Infrastructure`
+4. Start the API: `dotnet run --project ECommerce.API`
+5. Run tests: `dotnet test ECommerce.Tests.Unit`
 
-### Run Unit Tests
+> 🌐 Swagger UI available at **`https://localhost:7000/swagger`**
 
-Run `dotnet test ECommerce.Tests.Unit` to execute all test suites.
-
----
-
-## 💳 Stripe Test Mode
-
-Use the following **Stripe test card** to simulate payments:
-
-| Field | Value |
-|---|---|
-| Card Number | `4242 4242 4242 4242` |
-| Expiry Date | Any future date |
-| CVC | Any 3 digits |
-
-> ⚠️ Payments are handled in **Test Mode only**.  
-> The API returns a checkout URL, and redirection is handled by the client.
-
----
+<br/>
 
 ## 🔐 Authentication
 
-All protected endpoints require a JWT token in the `Authorization: Bearer <token>` header.
+All protected endpoints require a JWT token: `Authorization: Bearer <token>`
 
-Tokens are obtained via the Auth endpoints: `POST /api/auth/login`, `POST /api/auth/register`, and `POST /api/auth/refresh-token`.
+| Endpoint | Description |
+|:--|:--|
+| `POST /api/auth/register` | Create a new account |
+| `POST /api/auth/login` | Sign in and receive JWT |
+| `POST /api/auth/refresh-token` | Refresh an expired token |
 
----
+<br/>
 
-## 📌 API Highlights
+## 💳 Stripe Test Mode
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/auth/login` | Authenticate and get JWT |
-| `POST` | `/api/orders` | Create order from cart |
-| `GET` | `/api/orders` | User order history |
-| `PUT` | `/api/orders/{id}/status` | Admin: update order status |
-| `POST` | `/api/payments/checkout` | Start Stripe checkout |
-| `GET` | `/api/cart` | Get user cart |
-| `POST` | `/api/cart` | Add item to cart |
-| `GET` | `/api/wishlist` | Get user wishlist |
-| `POST` | `/api/reviews` | Add product review |
-| `GET` | `/api/reviews/product/{id}` | Get product reviews |
-| `GET` | `/api/products` | Browse products (paginated) |
-| `GET` | `/api/addresses` | Get user addresses |
+| Field | Value |
+|:--|:--|
+| Card Number | `4242 4242 4242 4242` |
+| Expiry | Any future date |
+| CVC | Any 3 digits |
 
-Full documentation available via Swagger.
+> ⚠️ Payments run in **Test Mode only**. The API returns a Stripe checkout URL — redirection is handled by the client.
 
 ---
+
+<div align="center">
+
+**Built with ❤️ using .NET 9 and Clean Architecture**
+
+</div>
