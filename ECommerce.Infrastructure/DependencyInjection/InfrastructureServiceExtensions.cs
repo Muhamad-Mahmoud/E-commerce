@@ -1,13 +1,11 @@
 using System.Text;
 using ECommerce.Application.Interfaces.Services;
 using ECommerce.Application.Interfaces.Services.Auth;
-using ECommerce.Application.Services;
 using ECommerce.Domain.Interfaces;
 using ECommerce.Infrastructure.Helper;
 using ECommerce.Infrastructure.Identity;
 using ECommerce.Infrastructure.Persistence;
 using ECommerce.Infrastructure.Services.Auth;
-using ECommerce.Infrastructure.Services;
 using ECommerce.Infrastructure.UnitOfWork;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -72,10 +70,8 @@ namespace ECommerce.Infrastructure.DependencyInjection
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IRefreshTokenService, RefreshTokenService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
-            services.AddScoped<ICategoryService, CategoryService>();
-            services.AddScoped<IProductService, ProductService>();
-            services.AddScoped<IShoppingCartService, ShoppingCartService>();
-            services.AddScoped<IOrderService, OrderService>();
+
+            // Register Payment Service (external infrastructure)
             services.AddScoped<IPaymentService, StripePaymentService>();
 
             //  Configure Identity Options

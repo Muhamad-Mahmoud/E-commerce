@@ -1,4 +1,5 @@
 using AutoMapper;
+using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.DTO.Reviews;
 using ECommerce.Application.Interfaces.Services;
 using ECommerce.Domain.Entities;
@@ -80,6 +81,25 @@ namespace ECommerce.Application.Services
         {
             var reviews = await _unitOfWork.Reviews.GetProductReviewsAsync(productId);
             return Result.Success(_mapper.Map<IEnumerable<ReviewDto>>(reviews) ?? Enumerable.Empty<ReviewDto>());
+        }
+
+        /// <summary>
+        /// Gets paginated reviews for a specific product.
+        /// </summary>
+        public async Task<Result<PagedResult<ReviewDto>>> GetProductReviewsPagedAsync(int productId, PaginationParams paginationParams)
+        {
+            var pagedReviews = await _unitOfWork.Reviews.GetProductReviewsPagedAsync(
+                productId, paginationParams.PageNumber, paginationParams.PageSize);
+
+            var reviewDtos = _mapper.Map<IReadOnlyList<ReviewDto>>(pagedReviews.Items) ?? new List<ReviewDto>();
+
+            var result = new PagedResult<ReviewDto>(
+                pagedReviews.PageNumber,
+                pagedReviews.PageSize,
+                pagedReviews.TotalCount,
+                reviewDtos);
+
+            return Result.Success(result);
         }
 
         /// <summary>

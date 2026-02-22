@@ -14,11 +14,13 @@ namespace ECommerce.API.Controllers
     {
         private readonly IPaymentService _paymentService;
         private readonly IOrderService _orderService;
+        private readonly IConfiguration _configuration;
 
-        public PaymentsController(IPaymentService paymentService, IOrderService orderService)
+        public PaymentsController(IPaymentService paymentService, IOrderService orderService, IConfiguration configuration)
         {
             _paymentService = paymentService;
             _orderService = orderService;
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -35,7 +37,7 @@ namespace ECommerce.API.Controllers
             }
 
             var order = result.Value;
-            var domain = "http://localhost:3000/";
+            var domain = _configuration["PaymentSettings:ClientDomain"] ?? "http://localhost:3000/";
 
             var paymentRequest = new CreatePaymentRequest
             {

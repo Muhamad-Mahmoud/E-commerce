@@ -1,3 +1,4 @@
+using ECommerce.Application.DTO.Pagination;
 using ECommerce.Application.DTO.Reviews;
 using ECommerce.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -34,6 +35,15 @@ namespace ECommerce.API.Controllers
         public async Task<IActionResult> GetProductReviews(int productId)
         {
             return HandleResult(await _reviewService.GetProductReviewsAsync(productId));
+        }
+
+        /// <summary>
+        /// Get paginated reviews for a specific product.
+        /// </summary>
+        [HttpGet("product/{productId}/paged")]
+        public async Task<IActionResult> GetProductReviewsPaged(int productId, [FromQuery] PaginationParams paginationParams)
+        {
+            return HandleResult(await _reviewService.GetProductReviewsPagedAsync(productId, paginationParams));
         }
 
         /// <summary>

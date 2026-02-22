@@ -27,6 +27,14 @@ namespace ECommerce.Infrastructure.Repositories
             return await query.FirstOrDefaultAsync(e => e.Id == id);
         }
 
+        public virtual async Task<T?> GetByIdForUpdateAsync(
+            int id,
+            params Expression<Func<T, object>>[] includes)
+        {
+            var query = ApplyIncludes(_dbSet.AsQueryable(), includes);
+            return await query.FirstOrDefaultAsync(e => e.Id == id);
+        }
+
         public virtual async Task<IEnumerable<T>> GetAllAsync(
             params Expression<Func<T, object>>[] includes)
         {

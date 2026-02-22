@@ -9,7 +9,7 @@ namespace ECommerce.API.Extensions
         {
             services.AddControllers();
             services.AddSwaggerDocumentation();
-            services.AddCorsPolicy();
+            services.AddCorsPolicy(config);
             return services;
         }
 
@@ -60,13 +60,16 @@ namespace ECommerce.API.Extensions
             return services;
         }
 
-        private static IServiceCollection AddCorsPolicy(this IServiceCollection services)
+        private static IServiceCollection AddCorsPolicy(this IServiceCollection services, IConfiguration config)
         {
+            var allowedOrigins = config.GetSection("CorsSettings:AllowedOrigins").Get<string[]>()
+                ?? new[] { "http://localhost:3000" };
+
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", policy =>
                 {
-                    policy.AllowAnyOrigin()
+                    policy.WithOrigins(allowedOrigins)
                           .AllowAnyMethod()
                           .AllowAnyHeader();
                 });
